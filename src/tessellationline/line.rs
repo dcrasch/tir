@@ -5,12 +5,12 @@ pub type Matrix = Matrix3<f32>;
 
 #[derive(Debug)]
 pub struct TessellationLine {
-    pub points: Vec<Point>,
+    points: Vec<Point>,
     transform: Matrix,
     ci: Matrix,
-    pub angle: f32,
-    pub tx: f32,
-    pub ty: f32,
+    angle: f32,
+    tx: f32,
+    ty: f32,
 }
 
 impl TessellationLine {
@@ -22,13 +22,25 @@ impl TessellationLine {
             points: Vec::<Point2<f32>>::new(),
             transform,
             ci: transform.try_inverse().unwrap(),
-            angle: 0.0,
-            tx: 0.0,
-            ty: 0.0,
+            angle: angle,
+            tx: tx,
+            ty: ty,
         }
     }
+
     pub fn append(&mut self, p: Point) {
         self.points.push(p);
+    }
+
+    pub fn dpoints(&self) -> impl Iterator<Item = Point> + '_ {
+        self.points.iter().cloned()
+    }
+
+    pub fn cpoints(&self) -> impl Iterator<Item = Point> + '_ {
+        // maybe create copy of transform?
+        self.points
+            .iter()
+            .map(move |p| self.transform.transform_point(p))
     }
 }
 
@@ -40,7 +52,7 @@ impl Default for TessellationLine {
             ci: Matrix::identity(),
             angle: 0.0,
             tx: 0.0,
-            ty: 0.0
+            ty: 0.0,
         }
     }
 }

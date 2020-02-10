@@ -1,4 +1,4 @@
-mod square;
 mod figure;
+mod square;
 
 pub use figure::TessellationFigure;
