@@ -2,6 +2,20 @@ use std::iter;
 
 use crate::tessellationline::{Point, TessellationLine};
 
+#[derive(Debug)]
+pub enum TessellationShape {
+    S,
+    U,
+    I,
+    J,
+}
+
+impl Default for TessellationShape {
+    fn default() -> Self {
+        TessellationShape::S
+    }
+}
+
 #[derive(Default, Debug)]
 pub struct TessellationFigure {
     pub lines: Vec<TessellationLine>,
@@ -9,8 +23,9 @@ pub struct TessellationFigure {
     pub gridincy: f32,
     pub shiftx: f32,
     pub shifty: f32,
-    pub sequence: u32,
     pub rotdiv: u32,
+    pub isReversed: bool,
+    pub shape: TessellationShape,
 }
 
 impl TessellationFigure {
@@ -21,7 +36,8 @@ impl TessellationFigure {
             gridincy: 0.0,
             shiftx: 0.0,
             shifty: 0.0,
-            sequence: 0,
+            isReversed: false, // not per line??
+            shape: TessellationShape::S,
             rotdiv: 0,
         }
     }
@@ -30,7 +46,11 @@ impl TessellationFigure {
         self.lines.push(l);
     }
 
-    pub fn points(&self) -> impl Iterator<Item = Point> + '_ {
-        self.lines.first().unwrap().dpoints()
+    pub fn points(&self) -> Vec<Point> {
+        (&self.lines)
+            .into_iter()
+            .flat_map(|x| x.dpoints())
+            .chain((&self.lines).into_iter().flat_map(|x| x.cpoints()))
+            .collect()
     }
 }

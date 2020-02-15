@@ -19,7 +19,7 @@ impl TessellationLine {
         let transform: Matrix = Matrix::identity().append_translation(&Vector2::<f32>::new(tx, ty))
             * UnitComplex::new(angle / 180.0 * std::f32::consts::PI).to_homogeneous();
         Self {
-            points: Vec::<Point2<f32>>::new(),
+            points: Vec::<Point>::new(),
             transform,
             ci: transform.try_inverse().unwrap(),
             angle: angle,
@@ -32,15 +32,16 @@ impl TessellationLine {
         self.points.push(p);
     }
 
-    pub fn dpoints(&self) -> impl Iterator<Item = Point> + '_ {
-        self.points.iter().cloned()
+    pub fn dpoints(&self) -> Vec<Point> {
+        self.points.to_vec()
     }
 
-    pub fn cpoints(&self) -> impl Iterator<Item = Point> + '_ {
+    pub fn cpoints(&self) -> Vec<Point> {
         // maybe create copy of transform?
         self.points
             .iter()
             .map(move |p| self.transform.transform_point(p))
+            .collect()
     }
 }
 
