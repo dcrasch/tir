@@ -1,6 +1,4 @@
 use crate::tessellationfigure::TessellationFigure;
-use nalgebra::{Matrix3, Vector2};
-
 use raqote::*;
 
 #[derive(Clone, Copy)]
@@ -28,13 +26,11 @@ impl Render for Backend {
             &DrawOptions::new(),
         );
 
-        let m = Matrix3::identity()
-            .append_scaling(30.0)
-            .append_translation(&Vector2::<f32>::new(0.0, 0.0));
+        let m = Transform::create_scale(30.0,30.0).post_translate(euclid::vec2(10.0,10.0));
         let mut pb = PathBuilder::new();
         for l in figure.points().windows(2) {
-            let p1 = m.transform_point(&l[0]);
-            let p2 = m.transform_point(&l[1]);
+            let p1 = m.transform_point(l[0]);
+            let p2 = m.transform_point(l[1]);
             println!("{:?} {:?}", p1, p2);
 
             pb.move_to(p1.x, p1.y);
