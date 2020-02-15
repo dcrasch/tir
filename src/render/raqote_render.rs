@@ -1,5 +1,5 @@
 use crate::tessellationfigure::TessellationFigure;
-use nalgebra::{Matrix3, Point2, UnitComplex, Vector2};
+use nalgebra::{Matrix3, Vector2};
 
 use raqote::*;
 

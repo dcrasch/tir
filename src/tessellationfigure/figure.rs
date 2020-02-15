@@ -1,5 +1,3 @@
-use std::iter;
-
 use crate::tessellationline::{Point, TessellationLine};
 
 #[derive(Debug)]
@@ -24,7 +22,7 @@ pub struct TessellationFigure {
     pub shiftx: f32,
     pub shifty: f32,
     pub rotdiv: u32,
-    pub isReversed: bool,
+    pub is_reversed: bool,
     pub shape: TessellationShape,
 }
 
@@ -36,7 +34,7 @@ impl TessellationFigure {
             gridincy: 0.0,
             shiftx: 0.0,
             shifty: 0.0,
-            isReversed: false, // not per line??
+            is_reversed: false, // not per line??
             shape: TessellationShape::S,
             rotdiv: 0,
         }

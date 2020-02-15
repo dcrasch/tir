@@ -7,7 +7,7 @@ impl TessellationFigure {
         f.gridincx = 1.0;
         f.gridincy = 1.0;
         f.rotdiv = 1;
-        f.isReversed = false;
+        f.is_reversed = false;
         f.shiftx = 0.0;
         f.shifty = 1.0;
         f.shape = TessellationShape::S;
