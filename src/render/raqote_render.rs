@@ -26,16 +26,25 @@ impl Render for Backend {
             &DrawOptions::new(),
         );
 
-        let m = Transform::create_scale(30.0,30.0).post_translate(euclid::vec2(10.0,10.0));
+        let m = Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(0.0, 0.0));
         let mut pb = PathBuilder::new();
-        for l in figure.points().windows(2) {
-            let p1 = m.transform_point(l[0]);
-            let p2 = m.transform_point(l[1]);
-            println!("{:?} {:?}", p1, p2);
-
-            pb.move_to(p1.x, p1.y);
-            pb.line_to(p2.x, p2.y);
+        let points = figure
+            .points()
+            .windows(2)
+            .filter_map(|l| {
+                if l[0] != l[1] {
+                    Some(m.transform_point(l[0]))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<Point>>();
+        let p1 = points[0].clone();
+        pb.move_to(p1.x, p1.y);
+        for p in points.iter().skip(1) {
+            pb.line_to(p.x, p.y);
         }
+        pb.close();
         let path = pb.finish();
 
         dt.stroke(

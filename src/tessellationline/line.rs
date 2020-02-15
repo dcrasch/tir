@@ -16,8 +16,7 @@ pub struct TessellationLine {
 
 impl TessellationLine {
     pub fn new(tx: f32, ty: f32, angle: f32) -> Self {
-        let transform = Transform::create_translation(tx,ty)
-            .post_rotate(Angle::degrees(angle));
+        let transform = Transform::create_translation(tx, ty).post_rotate(Angle::degrees(angle));
         Self {
             points: Vec::<Point>::new(),
             transform,
@@ -37,9 +36,9 @@ impl TessellationLine {
     }
 
     pub fn cpoints(&self) -> Vec<Point> {
-        // maybe create copy of transform?
         self.points
             .iter()
+            .rev()
             .map(move |p| self.transform.transform_point(*p))
             .collect()
     }
