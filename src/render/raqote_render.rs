@@ -13,20 +13,14 @@ impl Render for Backend {
         let mut dt = DrawTarget::new(400, 400);
 
         // white background
-        let mut pb = PathBuilder::new();
-        pb.rect(0., 0., 400., 400.);
-        dt.fill(
-            &pb.finish(),
-            &Source::Solid(SolidSource {
-                r: 0xff,
-                g: 0xff,
-                b: 0xff,
-                a: 0xff,
-            }),
-            &DrawOptions::new(),
-        );
+        dt.clear(SolidSource {
+            r: 0xff,
+            g: 0xff,
+            b: 0xff,
+            a: 0xff,
+        });
 
-        let m = Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(0.0, 0.0));
+        let m = Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(10.0, 10.0));
         let mut pb = PathBuilder::new();
         let points = figure
             .points()
@@ -51,11 +45,18 @@ impl Render for Backend {
             &path,
             &Source::Solid(SolidSource {
                 r: 0x0,
-                g: 0x0,
+                g: 0x88,
                 b: 0x0,
                 a: 0xff,
             }),
-            &StrokeStyle::default(),
+            &StrokeStyle {
+                cap: LineCap::Square,
+                join: LineJoin::Bevel,
+                width: 1.0,
+                miter_limit: 1.,
+                dash_array: vec![],
+                dash_offset: 0.,
+            },
             &DrawOptions::new(),
         );
 
