@@ -46,9 +46,9 @@ impl TessellationFigure {
 
     pub fn points(&self) -> Vec<Point> {
         (&self.lines)
-            .into_iter()
+            .iter()
             .flat_map(|x| x.dpoints())
-            .chain((&self.lines).into_iter().flat_map(|x| x.cpoints()))
+            .chain((&self.lines).iter().flat_map(|x| x.cpoints()))
             .collect()
     }
 }

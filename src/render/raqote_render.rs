@@ -39,7 +39,7 @@ impl Render for Backend {
                 }
             })
             .collect::<Vec<Point>>();
-        let p1 = points[0].clone();
+        let p1 = points[0];
         pb.move_to(p1.x, p1.y);
         for p in points.iter().skip(1) {
             pb.line_to(p.x, p.y);

@@ -2,7 +2,6 @@ use euclid::Angle;
 
 pub type Point = euclid::default::Point2D<f32>;
 pub type Transform = euclid::default::Transform2D<f32>;
-pub type Rotation = euclid::default::Rotation2D<f32>;
 
 #[derive(Debug)]
 pub struct TessellationLine {
@@ -21,9 +20,9 @@ impl TessellationLine {
             points: Vec::<Point>::new(),
             transform,
             ci: transform.inverse().unwrap(),
-            angle: angle,
-            tx: tx,
-            ty: ty,
+            angle,
+            tx,
+            ty,
         }
     }
 
