@@ -5,11 +5,11 @@ Tessellation In Rust.
 
 ## TODO
 
-[ ] Build simple ui with minifb
-[ ] Build web ui with webassembly
-[ ] Build flutter? android ios mobile app
-[ ] Write a blog about building the program
-[ ] Write more documentation about raqote and euclid.
+- [ ] Build simple ui with minifb
+- [ ] Build web ui with webassembly
+- [ ] Build flutter? android ios mobile app
+- [ ] Write a blog about building the program
+- [ ] Write more documentation about raqote and euclid.
 
 ## Links
 
