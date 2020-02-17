@@ -55,3 +55,24 @@ impl Default for TessellationLine {
         }
     }
 }
+
+pub fn magnitude(p: Point) -> f32 {
+    return p.x.powf(2.0) + p.y.powf(2.0);
+}
+
+pub fn breakline(p1: Point, p2: Point, current: Point, rectsize: f32) -> bool {
+    let d: Point = (p1 - p2).to_point();
+    let r = magnitude(d);
+
+    if r > 0.0 {
+        let distancefromline =
+            ((current.x * d.y - current.y * d.x + d.x * p2.y - d.y * p2.x) / r).abs();
+        if distancefromline < rectsize
+            && magnitude((current - p1).to_point()) < r
+            && magnitude((current - p2).to_point()) < r
+        {
+            return true;
+        }
+    }
+    return false;
+}

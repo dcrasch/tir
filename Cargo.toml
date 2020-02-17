@@ -8,5 +8,6 @@ edition = "2018"
 
 [dependencies]
 euclid = "0.20.7"
+
 raqote = { version="0.7.11", default-features=false}
 ## serde for json
