@@ -1,5 +1,3 @@
 mod line;
 
-pub use line::breakline;
-pub use line::Point;
-pub use line::TessellationLine;
+pub use line::{breakline, Point, TessellationLine};
