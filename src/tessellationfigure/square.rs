@@ -1,5 +1,6 @@
-use crate::tessellationfigure::{TessellationFigure, TessellationShape};
+use crate::tessellationfigure::TessellationFigure;
 use crate::tessellationline::{Point, TessellationLine};
+use crate::tessellationshape::TessellationShape;
 
 impl TessellationFigure {
     pub fn square() -> Self {

@@ -1,18 +1,5 @@
 use crate::tessellationline::{Point, TessellationLine};
-
-#[derive(Debug)]
-pub enum TessellationShape {
-    S,
-    U,
-    I,
-    J,
-}
-
-impl Default for TessellationShape {
-    fn default() -> Self {
-        TessellationShape::S
-    }
-}
+use crate::tessellationshape::TessellationShape;
 
 #[derive(Default, Debug)]
 pub struct TessellationFigure {
