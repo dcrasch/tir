@@ -1,4 +1,4 @@
-use crate::tessellationline::{Point, TessellationLine};
+use crate::tessellationline::{Point, PointIndexPath, TessellationLine};
 use crate::tessellationshape::TessellationShape;
 
 #[derive(Default, Debug)]
@@ -27,15 +27,44 @@ impl TessellationFigure {
         }
     }
 
-    pub fn append(&mut self, l: TessellationLine) {
-        self.lines.push(l);
+    /// Append `line` to
+    pub fn append(&mut self, line: TessellationLine) {
+        self.lines.push(line);
     }
 
+    /// Returns a list of the points and transformed points in the order of the figure.
     pub fn points(&self) -> Vec<Point> {
         (&self.lines)
             .iter()
             .flat_map(|x| x.dpoints())
             .chain((&self.lines).iter().flat_map(|x| x.cpoints()))
             .collect()
+    }
+
+    /// Check if a point falls on a line within rectsize of all the lines
+    pub fn hitline(&self, point: Point, rectsize: f32) -> Option<PointIndexPath> {
+        for (i, line) in self.lines.iter().enumerate() {
+            match line.hitline(point, rectsize) {
+                Some(x) => {
+                    return Some(PointIndexPath {
+                        line_index: i,
+                        point_index: x.point_index,
+                        corrp: x.corrp,
+                    })
+                }
+                _ => (),
+            }
+        }
+        None
+    }
+
+    /// Insert a `point` at `point_index_path`
+    pub fn insert(&mut self, point_index_path: PointIndexPath, point: Point) {
+        let p1 = if point_index_path.corrp {
+            self.lines[point_index_path.line_index].cpoint(point)
+        } else {
+            point
+        };
+        self.lines[point_index_path.line_index].insert(point_index_path.point_index, p1);
     }
 }

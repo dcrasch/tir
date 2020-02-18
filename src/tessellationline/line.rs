@@ -13,6 +13,13 @@ pub struct TessellationLine {
     ty: f32,
 }
 
+#[derive(Debug, PartialEq)]
+pub struct PointIndexPath {
+    pub line_index: usize,
+    pub point_index: usize,
+    pub corrp: bool,
+}
+
 impl TessellationLine {
     pub fn new(tx: f32, ty: f32, angle: f32) -> Self {
         let transform = Transform::create_translation(tx, ty).post_rotate(Angle::degrees(angle));
@@ -26,20 +33,83 @@ impl TessellationLine {
         }
     }
 
+    /// Append the `point` to the back of the points
     pub fn append(&mut self, p: Point) {
         self.points.push(p);
     }
 
+    /// Remove the point at `index` and shift down the following elements.
+    pub fn remove(&mut self, index: usize) {
+        self.points.remove(index);
+    }
+
+    /// Insert `point` at `position`
+    pub fn insert(&mut self, index: usize, point: Point) {
+        self.points.insert(index, point);
+    }
+
+    /// get a list of the points
     pub fn dpoints(&self) -> Vec<Point> {
         self.points.to_vec()
     }
 
+    /// get a list of the transformed points
     pub fn cpoints(&self) -> Vec<Point> {
         self.points
             .iter()
             .rev()
             .map(move |p| self.transform.transform_point(*p))
             .collect()
+    }
+
+    /// transform a `point` using the transform matix
+    pub fn cpoint(&self, point: Point) -> Point {
+        self.transform.transform_point(point)
+    }
+
+    /// check if a point
+    pub fn hitpoint(&self, p1: Point, rectsize: f32) -> Option<PointIndexPath> {
+        let p2 = self.ci.transform_point(p1);
+        let second_last = self.points.len() - 1;
+        for (i, &p) in self.points[1..second_last].iter().enumerate() {
+            if hit(p1, p, rectsize) {
+                return Some(PointIndexPath {
+                    line_index: 0,
+                    point_index: i,
+                    corrp: false,
+                });
+            }
+            if hit(p2, p, rectsize) {
+                return Some(PointIndexPath {
+                    line_index: 0,
+                    point_index: i,
+                    corrp: true,
+                });
+            }
+        }
+        None
+    }
+
+    /// Check if a point falls on a line within rectsize
+    pub fn hitline(&self, p1: Point, rectsize: f32) -> Option<PointIndexPath> {
+        let p2 = self.ci.transform_point(p1);
+        for (i, p) in self.points.windows(2).enumerate() {
+            if breakline(p[0], p[1], p1, rectsize) {
+                return Some(PointIndexPath {
+                    line_index: 0,
+                    point_index: i,
+                    corrp: false,
+                });
+            }
+            if breakline(p[0], p[1], p2, rectsize) {
+                return Some(PointIndexPath {
+                    line_index: 0,
+                    point_index: i,
+                    corrp: true,
+                });
+            }
+        }
+        None
     }
 }
 
