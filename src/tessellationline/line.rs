@@ -41,7 +41,7 @@ impl TessellationLine {
             .map(move |p| self.transform.transform_point(*p))
             .collect()
     }
-}
+ }
 
 impl Default for TessellationLine {
     fn default() -> Self {
@@ -54,6 +54,14 @@ impl Default for TessellationLine {
             ty: 0.0,
         }
     }
+}
+
+pub fn hit(p1:Point, p2:Point, rectsize: f32) -> bool {
+    let d: Point = (p1 - p2).to_point();
+    (d.x < rectsize) &&
+    (d.x >  -rectsize) &&
+    (d.y < rectsize) &&
+    (d.y > -rectsize)
 }
 
 pub fn distance(p: Point) -> f32 {
