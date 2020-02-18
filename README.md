@@ -11,8 +11,11 @@ Tessellation In Rust.
 - [ ] Write a blog about building the program
 - [ ] Write more documentation about raqote and euclid.
 
-## Links
+## Rust programming docs
 
+* https://doc.rust-lang.org/book/ch11-03-test-organization.html
+
+## Links
 
 * https://github.com/isohedral/tactile-js
 * https://github.com/jrmuizel/raqote
