@@ -13,7 +13,7 @@ pub struct TessellationLine {
     ty: f32,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone, Copy)]
 pub struct PointIndexPath {
     pub line_index: usize,
     pub point_index: usize,
@@ -62,9 +62,9 @@ impl TessellationLine {
             .collect()
     }
 
-    /// transform a `point` using the transform matix
+    /// transform a `point` using the transform matrix
     pub fn cpoint(&self, point: Point) -> Point {
-        self.transform.transform_point(point)
+        self.ci.transform_point(point)
     }
 
     /// check if a point
