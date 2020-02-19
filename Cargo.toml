@@ -1,13 +1,12 @@
 [package]
 name = "tessellation"
 version = "0.1.0"
-authors = ["David Rasch <david@bigdatahub.com>"]
+authors = ["David Rasch"]
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 euclid = "0.20.7"
-
 raqote = { version="0.7.11", default-features=false}
 ## serde for json
