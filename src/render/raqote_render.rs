@@ -5,11 +5,11 @@ use raqote::*;
 pub struct Backend;
 
 pub trait Render {
-    fn render_to_image(&self, figure: TessellationFigure) -> Option<Box<dyn OutputImage>>;
+    fn render_to_image(&self, figure: &TessellationFigure) -> Option<Box<dyn OutputImage>>;
 }
 
 impl Render for Backend {
-    fn render_to_image(&self, figure: TessellationFigure) -> Option<Box<dyn OutputImage>> {
+    fn render_to_image(&self, figure: &TessellationFigure) -> Option<Box<dyn OutputImage>> {
         let mut dt = DrawTarget::new(400, 400);
 
         // white background
@@ -67,10 +67,14 @@ impl Render for Backend {
 pub trait OutputImage {
     /// Saves rendered image to the selected path.
     fn save_png(&self, path: &std::path::Path) -> bool;
+    fn get_data(&self) -> &[u32];
 }
 
 impl OutputImage for raqote::DrawTarget {
     fn save_png(&self, path: &::std::path::Path) -> bool {
         self.write_png(path).is_ok()
+    }
+    fn get_data(&self) -> &[u32] {
+        self.get_data()
     }
 }

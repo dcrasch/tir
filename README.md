@@ -6,20 +6,21 @@ Tessellation In Rust.
 ## TODO
 
 - [ ] Build simple ui with minifb
-- [ ] Build web ui with webassembly
+- [ ] Build web ui with webassembly 
 - [ ] Build flutter? android ios mobile app
 - [ ] Write a blog about building the program
 - [ ] Write more documentation about raqote and euclid.
 
-## Rust programming docs
+## Rust programming docs and example code
 
 * https://doc.rust-lang.org/book/ch11-03-test-organization.html
+* https://github.com/redox-os/orbtk/blob/develop/crates/render/src/web/mod.rs
+* https://github.com/jrmuizel/raqote-examples/
 
 ## Links
 
 * https://github.com/isohedral/tactile-js
 * https://github.com/jrmuizel/raqote
-* https://github.com/jrmuizel/raqote-examples/
 * https://github.com/emoon/rust_minifb
 * http://www.rustinaction.com/
 
