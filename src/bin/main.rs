@@ -1,7 +1,7 @@
 use tessellation::render::*;
 use tessellation::tessellationfigure::TessellationFigure;
 
-use minifb::{MouseMode, Window, WindowOptions, Key};
+use minifb::{MouseMode, MouseButton, Window, WindowOptions, Key};
 const WIDTH: usize = 400;
 const HEIGHT: usize = 400;
 
@@ -18,5 +18,15 @@ fn main() {
     while window.is_open() && !window.is_key_down(Key::Escape) {
         let image = backend.render_to_image(&f).unwrap();
         window.update_with_buffer(image.get_data(), size.0, size.1).unwrap();
+
+        window.get_mouse_pos(MouseMode::Discard).map(|mouse| {
+            if window.get_mouse_down(MouseButton::Left) {
+                println!("left {:?}", mouse);
+            }
+            if window.get_mouse_down(MouseButton::Right) {
+                println!("right {:?}", mouse);
+
+            }
+        });
     }
 }
