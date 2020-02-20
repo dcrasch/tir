@@ -5,11 +5,19 @@ use raqote::*;
 pub struct Backend;
 
 pub trait Render {
-    fn render_to_image(&self, figure: &TessellationFigure) -> Option<Box<dyn OutputImage>>;
+    fn render_to_image(
+        &self,
+        figure: &TessellationFigure,
+        m: &Transform,
+    ) -> Option<Box<dyn OutputImage>>;
 }
 
 impl Render for Backend {
-    fn render_to_image(&self, figure: &TessellationFigure) -> Option<Box<dyn OutputImage>> {
+    fn render_to_image(
+        &self,
+        figure: &TessellationFigure,
+        m: &Transform,
+    ) -> Option<Box<dyn OutputImage>> {
         let mut dt = DrawTarget::new(400, 400);
 
         // white background
@@ -20,13 +28,12 @@ impl Render for Backend {
             a: 0xff,
         });
 
-        let m = Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(10.0, 10.0));
         let mut pb = PathBuilder::new();
         let points = figure
             .points()
             .windows(2)
             .filter_map(|l| {
-                if l[0] != l[1] {
+                if true || l[0] != l[1] {
                     Some(m.transform_point(l[0]))
                 } else {
                     None

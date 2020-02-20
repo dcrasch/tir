@@ -37,22 +37,19 @@ impl TessellationFigure {
         (&self.lines)
             .iter()
             .flat_map(|x| x.dpoints())
-            .chain((&self.lines).iter().flat_map(|x| x.cpoints()))
+            .chain((&self.lines).iter().flat_map(|l| l.cpoints()))
             .collect()
     }
 
     /// Check if a point falls on a line within rectsize of all the lines
     pub fn hitline(&self, point: Point, rectsize: f32) -> Option<PointIndexPath> {
         for (i, line) in self.lines.iter().enumerate() {
-            match line.hitline(point, rectsize) {
-                Some(x) => {
-                    return Some(PointIndexPath {
-                        line_index: i,
-                        point_index: x.point_index,
-                        corrp: x.corrp,
-                    })
-                }
-                _ => (),
+            if let Some(x) = line.hitline(point, rectsize) {
+                return Some(PointIndexPath {
+                    line_index: i,
+                    point_index: x.point_index,
+                    corrp: x.corrp,
+                });
             }
         }
         None
@@ -61,15 +58,12 @@ impl TessellationFigure {
     /// Check if a point falls on a line within rectsize of all the lines
     pub fn hitpoints(&self, point: Point, rectsize: f32) -> Option<PointIndexPath> {
         for (i, line) in self.lines.iter().enumerate() {
-            match line.hitpoint(point, rectsize) {
-                Some(x) => {
-                    return Some(PointIndexPath {
-                        line_index: i,
-                        point_index: x.point_index,
-                        corrp: x.corrp,
-                    })
-                }
-                _ => (),
+            if let Some(x) = line.hitpoint(point, rectsize) {
+                return Some(PointIndexPath {
+                    line_index: i,
+                    point_index: x.point_index,
+                    corrp: x.corrp,
+                });
             }
         }
         None
@@ -82,7 +76,16 @@ impl TessellationFigure {
         } else {
             point
         };
-        println!("p1={:?} pip={:?}", p1, point_index_path);
         self.lines[point_index_path.line_index].insert(point_index_path.point_index + 1, p1);
+    }
+
+    /// Update a `point` at `point_index_path`
+    pub fn update(&mut self, point_index_path: PointIndexPath, point: Point) {
+        let p1 = if point_index_path.corrp {
+            self.lines[point_index_path.line_index].cpoint(point)
+        } else {
+            point
+        };
+        self.lines[point_index_path.line_index].update(point_index_path.point_index, p1);
     }
 }

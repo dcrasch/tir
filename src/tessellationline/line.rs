@@ -1,7 +1,15 @@
+use euclid::vec2;
 use euclid::Angle;
 
 pub type Point = euclid::default::Point2D<f32>;
 pub type Transform = euclid::default::Transform2D<f32>;
+
+#[derive(Debug, PartialEq, Clone, Copy)]
+pub struct PointIndexPath {
+    pub line_index: usize,
+    pub point_index: usize,
+    pub corrp: bool,
+}
 
 #[derive(Debug)]
 pub struct TessellationLine {
@@ -13,16 +21,10 @@ pub struct TessellationLine {
     ty: f32,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-pub struct PointIndexPath {
-    pub line_index: usize,
-    pub point_index: usize,
-    pub corrp: bool,
-}
-
 impl TessellationLine {
     pub fn new(tx: f32, ty: f32, angle: f32) -> Self {
-        let transform = Transform::create_translation(tx, ty).post_rotate(Angle::degrees(angle));
+        let transform =
+            Transform::create_rotation(Angle::degrees(angle)).post_translate(vec2(tx, ty));
         Self {
             points: Vec::<Point>::new(),
             transform,
@@ -48,6 +50,10 @@ impl TessellationLine {
         self.points.insert(index, point);
     }
 
+    pub fn update(&mut self, index: usize, point: Point) {
+        self.points[index] = point;
+    }
+
     /// get a list of the points
     pub fn dpoints(&self) -> Vec<Point> {
         self.points.to_vec()
@@ -58,7 +64,7 @@ impl TessellationLine {
         self.points
             .iter()
             .rev()
-            .map(move |p| self.transform.transform_point(*p))
+            .map(|&p| self.transform.transform_point(p))
             .collect()
     }
 
@@ -75,14 +81,14 @@ impl TessellationLine {
             if hit(p1, p, rectsize) {
                 return Some(PointIndexPath {
                     line_index: 0,
-                    point_index: i,
+                    point_index: i + 1,
                     corrp: false,
                 });
             }
             if hit(p2, p, rectsize) {
                 return Some(PointIndexPath {
                     line_index: 0,
-                    point_index: i,
+                    point_index: i + 1,
                     corrp: true,
                 });
             }
@@ -132,7 +138,7 @@ fn hit(p1: Point, p2: Point, rectsize: f32) -> bool {
 }
 
 fn distance(p: Point) -> f32 {
-    return (p.x * p.x + p.y * p.y).sqrt();
+    (p.x * p.x + p.y * p.y).sqrt()
 }
 
 fn breakline(p1: Point, p2: Point, current: Point, rectsize: f32) -> bool {
@@ -149,7 +155,7 @@ fn breakline(p1: Point, p2: Point, current: Point, rectsize: f32) -> bool {
             return true;
         }
     }
-    return false;
+    false
 }
 
 #[cfg(test)]
@@ -263,5 +269,10 @@ mod tests {
     #[test]
     fn test_misspoint() {
         assert_eq!(hit(Point::new(0.0, 0.0), Point::new(10.0, 0.0), 5.0), false);
+    }
+
+    #[test]
+    fn test_transform() {
+        // let transform = Transform::create_translation(tx,ty).post_rotate(a);
     }
 }
