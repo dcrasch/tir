@@ -33,7 +33,7 @@ impl Render for Backend {
             .points()
             .windows(2)
             .filter_map(|l| {
-                if true || l[0] != l[1] {
+                if l[0] != l[1] {
                     Some(m.transform_point(l[0]))
                 } else {
                     None

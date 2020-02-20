@@ -22,10 +22,9 @@ fn main() {
     let mut f = TessellationFigure::square();
     let backend = Box::new(Backend);
     let mut drag: Option<(f32, f32)> = None;
-    let mut m: Transform =
-        Transform::create_scale(100.0, 100.0)
-        .post_translate(euclid::vec2(50.0, 50.0));
-    let mut mi = m.inverse().unwrap();
+    let m: Transform =
+        Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(50.0, 50.0));
+    let mi = m.inverse().unwrap();
     let mut selected_point_index: Option<PointIndexPath> = None;
 
     // Limit to max ~60 fps update rate
