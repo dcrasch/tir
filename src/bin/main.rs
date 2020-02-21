@@ -19,7 +19,7 @@ fn main() {
     )
     .unwrap();
     let size = window.get_size();
-    let mut f = TessellationFigure::square();
+    let mut f = TessellationFigure::square90();
     let backend = Box::new(Backend);
     let mut drag: Option<(f32, f32)> = None;
     let m: Transform =
