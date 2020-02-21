@@ -19,7 +19,7 @@ fn main() {
     )
     .unwrap();
     let size = window.get_size();
-    let mut f = TessellationFigure::diamond();
+    let mut f = TessellationFigure::square();
     let backend = Box::new(Backend);
     let mut drag: Option<(f32, f32)> = None;
     let m: Transform =
@@ -30,7 +30,7 @@ fn main() {
     // Limit to max ~60 fps update rate
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        let image = backend.render_to_image(&f, &m).unwrap();
+        let image = backend.render_to_image(&f, &m).unwrap(); // do not render again if no changes
         window
             .update_with_buffer(image.get_data(), size.0, size.1)
             .unwrap();
@@ -57,9 +57,19 @@ fn main() {
             f = TessellationFigure::square90();
         }
 
-        if window.is_key_pressed(Key::Key3, KeyRepeat::No) {
+        if window.is_key_pressed(Key::Key4, KeyRepeat::No) {
             selected_point_index = None;
             f = TessellationFigure::diamond();
+        }
+
+        if window.is_key_pressed(Key::Key5, KeyRepeat::No) {
+            selected_point_index = None;
+            f = TessellationFigure::brick();
+        }
+
+        if window.is_key_pressed(Key::Key6, KeyRepeat::No) {
+            selected_point_index = None;
+            f = TessellationFigure::hexagon();
         }
 
         if let Some(mouse) = window.get_mouse_pos(MouseMode::Discard) {
