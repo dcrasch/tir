@@ -9,7 +9,7 @@ impl TessellationFigure {
         f.gridincy = 1.5;
         f.rotdiv = 3;
         f.is_reversed = true;
-        f.shiftx = 0.866025;
+        f.shiftx = 0.866_025;
         f.shifty = 0.0;
         f.shape = TessellationShape::S;
 
@@ -20,7 +20,7 @@ impl TessellationFigure {
 
         let mut l2: TessellationLine = TessellationLine::new(1.73205, 0.0, -120.0);
         l2.append(Point::new(0.0, 1.0));
-        l2.append(Point::new(0.866025, 0.5));
+        l2.append(Point::new(0.866_025, 0.5));
         f.append(l2);
 
         f
