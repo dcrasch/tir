@@ -33,18 +33,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_polysquare() {
-        let f = TessellationFigure::square();
+    fn test_polydiamond() {
+        let f = TessellationFigure::diamond();
         assert_eq!(
             f.points(),
             vec![
                 Point::new(0.0, 0.0),
                 Point::new(0.0, 1.0),
                 Point::new(0.0, 1.0),
-                Point::new(1.0, 1.0),
-                Point::new(1.0, 1.0),
-                Point::new(1.0, 0.0),
-                Point::new(1.0, 0.0),
+                Point::new(0.866025, 0.5),
+                Point::new(0.86602473, 0.49999955),
+                Point::new(0.86602455,-0.50000006),
+                Point::new(0.86602545,-0.4999999),
                 Point::new(0.0, 0.0),
             ]
         );

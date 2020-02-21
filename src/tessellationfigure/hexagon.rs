@@ -31,3 +31,31 @@ impl TessellationFigure {
         f
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_polyhexagon() {
+        let f = TessellationFigure::hexagon();
+        assert_eq!(
+            f.points(),
+            vec![
+                Point::new(0.0, 0.0),
+                Point::new(1.0, 0.0),
+                Point::new(1.0, 0.0),
+                Point::new(1.866025, 0.866025),
+                Point::new(1.866025, 0.866025),
+                Point::new(1.0,1.73205),
+                Point::new(1.0,1.73205),
+                Point::new(0.0,1.73205),
+                Point::new(0.0,1.73205),
+                Point::new(-0.866025,0.866025),
+                Point::new(-0.866025,0.866025),
+                Point::new(0.0, 0.0),
+            ]
+        );
+    }
+}

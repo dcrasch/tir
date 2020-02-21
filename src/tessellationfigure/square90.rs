@@ -26,3 +26,27 @@ impl TessellationFigure {
         f
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_polysquare90() {
+        let f = TessellationFigure::square90();
+        assert_eq!(
+            f.points(),
+            vec![
+                Point::new(0.0, 0.0),
+                Point::new(0.0, 1.0),
+                Point::new(0.0, 1.0),
+                Point::new(1.0, 1.0),
+                Point::new(1.0, 0.99999994),
+                Point::new(1.0, -0.00000004371139),
+                Point::new(1.0, 0.000000011924881),
+                Point::new(0.0, 0.0),
+            ]
+        );
+    }
+}

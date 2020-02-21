@@ -31,3 +31,31 @@ impl TessellationFigure {
         f
     }
 }
+
+#[cfg(test)]
+mod tests {
+
+    use super::*;
+
+    #[test]
+    fn test_polybrick() {
+        let f = TessellationFigure::brick();
+        assert_eq!(
+            f.points(),
+            vec![
+                Point::new(0.0, 1.0),
+                Point::new(0.0, 0.0),
+                Point::new(0.0, 0.0),
+                Point::new(0.5, 0.0),
+                Point::new(0.5, 0.0),
+                Point::new(1.0, 0.0),
+                Point::new(1.0, 0.0),
+                Point::new(1.0, 1.0),
+                Point::new(1.0, 1.0),
+                Point::new(0.5, 1.0),
+                Point::new(0.5, 1.0),
+                Point::new(0.0, 1.0),
+            ]
+        );
+    }
+}
