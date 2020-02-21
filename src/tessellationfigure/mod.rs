@@ -1,8 +1,8 @@
 mod figure;
 
-mod square;
-mod triangle;
-mod square90;
 mod diamond;
+mod square;
+mod square90;
+mod triangle;
 
 pub use figure::TessellationFigure;

@@ -51,7 +51,7 @@ fn main() {
             selected_point_index = None;
             f = TessellationFigure::triangle();
         }
-  
+
         if window.is_key_pressed(Key::Key3, KeyRepeat::No) {
             selected_point_index = None;
             f = TessellationFigure::square90();
@@ -61,7 +61,6 @@ fn main() {
             selected_point_index = None;
             f = TessellationFigure::diamond();
         }
-
 
         if let Some(mouse) = window.get_mouse_pos(MouseMode::Discard) {
             if window.get_mouse_down(MouseButton::Left) {
