@@ -63,6 +63,14 @@ impl TessellationLine {
     pub fn cpoints(&self) -> Vec<Point> {
         self.points
             .iter()
+            .map(|&p| self.transform.transform_point(p))
+            .collect()
+    }
+
+    /// get a list of the transformed points
+    pub fn crpoints(&self) -> Vec<Point> {
+        self.points
+            .iter()
             .rev()
             .map(|&p| self.transform.transform_point(p))
             .collect()

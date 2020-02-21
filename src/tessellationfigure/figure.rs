@@ -34,11 +34,19 @@ impl TessellationFigure {
 
     /// Returns a list of the points and transformed points in the order of the figure.
     pub fn points(&self) -> Vec<Point> {
-        (&self.lines)
-            .iter()
-            .flat_map(|x| x.dpoints())
-            .chain((&self.lines).iter().flat_map(|l| l.cpoints()))
-            .collect()
+        if self.is_reversed {
+            (&self.lines)
+                .iter()
+                .flat_map(|l| l.dpoints())
+                .chain((&self.lines).iter().flat_map(|l| l.cpoints()).rev())
+                .collect()
+        } else {
+            (&self.lines)
+                .iter()
+                .flat_map(|l| l.dpoints())
+                .chain((&self.lines).iter().flat_map(|l| l.crpoints()))
+                .collect()
+        }
     }
 
     /// Check if a point falls on a line within rectsize of all the lines

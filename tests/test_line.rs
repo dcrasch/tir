@@ -63,7 +63,7 @@ mod tests {
             l1.hitpoint(Point::new(0.0, 0.5), 0.01),
             Some(PointIndexPath {
                 line_index: 0,
-                point_index: 0,
+                point_index: 1,
                 corrp: false
             })
         );
@@ -89,7 +89,7 @@ mod tests {
             l1.hitpoint(Point::new(1.0, 0.5), 0.01),
             Some(PointIndexPath {
                 line_index: 0,
-                point_index: 0,
+                point_index: 1,
                 corrp: true
             })
         );
