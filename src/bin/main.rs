@@ -19,7 +19,7 @@ fn main() {
     )
     .unwrap();
     let size = window.get_size();
-    let mut f = TessellationFigure::square90();
+    let mut f = TessellationFigure::diamond();
     let backend = Box::new(Backend);
     let mut drag: Option<(f32, f32)> = None;
     let m: Transform =
@@ -51,6 +51,17 @@ fn main() {
             selected_point_index = None;
             f = TessellationFigure::triangle();
         }
+  
+        if window.is_key_pressed(Key::Key3, KeyRepeat::No) {
+            selected_point_index = None;
+            f = TessellationFigure::square90();
+        }
+
+        if window.is_key_pressed(Key::Key3, KeyRepeat::No) {
+            selected_point_index = None;
+            f = TessellationFigure::diamond();
+        }
+
 
         if let Some(mouse) = window.get_mouse_pos(MouseMode::Discard) {
             if window.get_mouse_down(MouseButton::Left) {
