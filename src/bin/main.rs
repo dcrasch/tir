@@ -23,7 +23,7 @@ fn main() {
     let backend = Box::new(Backend);
     let mut drag: Option<(f32, f32)> = None;
     let m: Transform =
-        Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(50.0, 50.0));
+        Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(100.0, 100.0));
     let mi = m.inverse().unwrap();
     let mut selected_point_index: Option<PointIndexPath> = None;
 
@@ -41,6 +41,17 @@ fn main() {
         if window.is_key_pressed(Key::L, KeyRepeat::No) {
             println!("load")
         }
+
+        if window.is_key_pressed(Key::Key1, KeyRepeat::No) {
+            selected_point_index = None;
+            f = TessellationFigure::square();
+        }
+
+        if window.is_key_pressed(Key::Key2, KeyRepeat::No) {
+            selected_point_index = None;
+            f = TessellationFigure::triangle();
+        }
+
         if let Some(mouse) = window.get_mouse_pos(MouseMode::Discard) {
             if window.get_mouse_down(MouseButton::Left) {
                 let p = mi.transform_point(Point::new(mouse.0, mouse.1));
