@@ -2,7 +2,7 @@ use minifb::{Key, KeyRepeat, MouseButton, MouseMode, Window, WindowOptions};
 use raqote::*;
 
 use tessellation::render::*;
-use tessellation::tessellationfigure::TessellationFigure;
+use tessellation::tessellationfigure::{TessellationFigure, TessellationPlane};
 use tessellation::tessellationline::PointIndexPath;
 
 const WIDTH: usize = 400;
@@ -20,6 +20,7 @@ fn main() {
     .unwrap();
     let size = window.get_size();
     let mut f = TessellationFigure::square();
+    let p = TessellationPlane {};
     let backend = Box::new(Backend);
     let mut drag: Option<(f32, f32)> = None;
     let m: Transform =
@@ -30,7 +31,7 @@ fn main() {
     // Limit to max ~60 fps update rate
     window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
     while window.is_open() && !window.is_key_down(Key::Escape) {
-        let image = backend.render_to_image(&f, &m).unwrap(); // do not render again if no changes
+        let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
         window
             .update_with_buffer(image.get_data(), size.0, size.1)
             .unwrap();
