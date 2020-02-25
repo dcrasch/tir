@@ -40,6 +40,18 @@ impl Render for Backend {
                 b: 0x88,
                 a: 0xff,
             },
+            SolidSource {
+                r: 0xff,
+                g: 0x88,
+                b: 0x0,
+                a: 0xff,
+            },
+            SolidSource {
+                r: 0xff,
+                g: 0x0,
+                b: 0xff,
+                a: 0xff,
+            },
         ];
         // white background
         dt.clear(SolidSource {
@@ -94,15 +106,27 @@ impl Render for Backend {
         let mut dt = DrawTarget::new(400, 400);
         let colors = vec![
             SolidSource {
-                r: 0x0,
+                r: 0xf6,
                 g: 0x88,
-                b: 0x0,
+                b: 0xbb,
                 a: 0xff,
             },
             SolidSource {
-                r: 0x0,
-                g: 0x0,
-                b: 0x88,
+                r: 0xe8,
+                g: 0xf9,
+                b: 0xe9,
+                a: 0xff,
+            },
+            SolidSource {
+                r: 0xba,
+                g: 0xfa,
+                b: 0xa1,
+                a: 0xff,
+            },
+            SolidSource {
+                r: 0x9d,
+                g: 0xe3,
+                b: 0xd0,
                 a: 0xff,
             },
         ];
@@ -113,22 +137,25 @@ impl Render for Backend {
             b: 0xff,
             a: 0xff,
         });
-        // white background
-        dt.clear(SolidSource {
-            r: 0xff,
-            g: 0xff,
-            b: 0xff,
-            a: 0xff,
-        });
-
-        let mut g = plane.grid(&figure, 400.0, 400.0, 70.);
+        let mut row = 0;
+        let g = plane.grid(&figure, 400.0, 400.0, 70.);
         let mut c = 0;
 
-        for gridrow in g {
-            for gridpoint in gridrow {
-                for rotdiv in 1..=figure.rotdiv {
-                    let angle = Angle::degrees(360.0 * (rotdiv as f32) / (figure.rotdiv as f32));
-                    c += 1;
+        for rotdiv in 1..=figure.rotdiv {
+            let angle = Angle::degrees(360.0 * (rotdiv as f32) / (figure.rotdiv as f32));
+
+            for gridrow in &g {
+                if !figure.is_reversed {
+                    c = row % 2;
+                }
+                for gridpoint in gridrow {
+                    if figure.is_reversed {
+                        c = rotdiv - 1;
+                    }
+                    if !figure.is_reversed && figure.gridincy < figure.gridincx {
+                        c = row % 3;
+                    }
+
                     let m = Transform::create_rotation(angle)
                         .post_scale(70.0, 70.0)
                         .post_translate(euclid::vec2(gridpoint.x, gridpoint.y));
@@ -153,8 +180,14 @@ impl Render for Backend {
                     pb.close();
                     let path = pb.finish();
 
-                    dt.fill(&path, &Source::Solid(colors[c % 2]), &DrawOptions::new());
+                    dt.fill(
+                        &path,
+                        &Source::Solid(colors[(c % 4) as usize]),
+                        &DrawOptions::new(),
+                    );
+                    c += 1;
                 }
+                row += 1;
             }
         }
 
@@ -190,7 +223,7 @@ impl Render for Backend {
             &StrokeStyle {
                 cap: LineCap::Square,
                 join: LineJoin::Bevel,
-                width: 1.0,
+                width: 3.0,
                 miter_limit: 1.,
                 dash_array: vec![],
                 dash_offset: 0.,
