@@ -1,7 +1,12 @@
 use euclid::vec2;
 use euclid::Angle;
 
+use serde::de::Deserializer;
+use serde::ser::{SerializeSeq, Serializer};
+use serde::{Deserialize, Serialize};
+
 pub type Point = euclid::default::Point2D<f32>;
+
 pub type Transform = euclid::default::Transform2D<f32>;
 
 #[derive(Debug, PartialEq, Clone, Copy)]
@@ -11,10 +16,45 @@ pub struct PointIndexPath {
     pub corrp: bool,
 }
 
-#[derive(Debug)]
+#[derive(Serialize, Deserialize)]
+pub struct PointDef {
+    x: f32,
+    y: f32,
+}
+
+fn points_serialize<S>(v: &[Point], s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut seq = s.serialize_seq(Some(v.len()))?;
+    for p in v {
+        seq.serialize_element(&PointDef { x: p.x, y: p.y })?;
+    }
+    seq.end()
+}
+
+fn points_deserialize<'de, D>(d: D) -> Result<Vec<Point>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let v = Vec::deserialize(d)?;
+    Ok(v.into_iter()
+        .map(|p: PointDef| Point::new(p.x, p.y))
+        .collect())
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TessellationLine {
+    #[serde(
+        serialize_with = "points_serialize",
+        deserialize_with = "points_deserialize"
+    )]
     points: Vec<Point>,
+
+    #[serde(skip)]
     transform: Transform,
+
+    #[serde(skip)]
     ci: Transform,
     angle: f32,
     tx: f32,

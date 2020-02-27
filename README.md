@@ -16,6 +16,7 @@ Tessellation In Rust.
 * https://doc.rust-lang.org/book/ch11-03-test-organization.html
 * https://github.com/redox-os/orbtk/blob/develop/crates/render/src/web/mod.rs
 * https://github.com/jrmuizel/raqote-examples/
+* https://github.com/serde-rs/serde/issues/723
 
 ## Links
 

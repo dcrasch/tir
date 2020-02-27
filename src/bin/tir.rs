@@ -1,3 +1,5 @@
+use std::fs;
+
 use minifb::{Key, KeyRepeat, MouseButton, MouseMode, Window, WindowOptions};
 use raqote::*;
 
@@ -37,10 +39,20 @@ fn main() {
             .unwrap();
         if window.is_key_pressed(Key::S, KeyRepeat::No) {
             println!("save");
-            println!("{:?}", f)
+            fs::write(
+                "figure.json",
+                serde_json::to_string(&f).expect("json error").as_bytes(),
+            )
+            .expect("file error");
         }
         if window.is_key_pressed(Key::L, KeyRepeat::No) {
-            println!("load")
+            println!("load");
+            f = serde_json::from_str(
+                fs::read_to_string("figure.json")
+                    .expect("file error")
+                    .as_str(),
+            )
+            .expect("json error"); //TODO set matrix
         }
 
         if window.is_key_pressed(Key::Key1, KeyRepeat::No) {
