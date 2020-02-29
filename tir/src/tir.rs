@@ -3,9 +3,9 @@ use std::fs;
 use minifb::{Key, KeyRepeat, MouseButton, MouseMode, Window, WindowOptions};
 use raqote::*;
 
-use tessellation::render::*;
-use tessellation::tessellationfigure::{TessellationFigure, TessellationPlane};
-use tessellation::tessellationline::PointIndexPath;
+use tessellations::render::*;
+use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
+use tessellations::tessellationline::PointIndexPath;
 
 const WIDTH: usize = 400;
 const HEIGHT: usize = 400;
