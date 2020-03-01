@@ -239,6 +239,7 @@ pub trait OutputImage {
     /// Saves rendered image to the selected path.
     fn save_png(&self, path: &std::path::Path) -> bool;
     fn get_data(&self) -> &[u32];
+    fn get_data_u8(&mut self) -> &mut [u8];
 }
 
 impl OutputImage for raqote::DrawTarget {
@@ -247,5 +248,9 @@ impl OutputImage for raqote::DrawTarget {
     }
     fn get_data(&self) -> &[u32] {
         self.get_data()
+    }
+
+    fn get_data_u8(&mut self) -> &mut [u8] {
+        self.get_data_u8_mut()
     }
 }
