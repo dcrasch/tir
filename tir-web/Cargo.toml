@@ -1,8 +1,11 @@
 [package]
 name = "tir-web"
 version = "0.1.0"
-authors = ["David Rasch <dcrasch@gmail.com>"]
+authors = ["David Rasch"]
+license= "GPL-3.0"
 edition = "2018"
+repository = "https://github.com/dcrasch/tir"
+
 
 [lib]
 crate-type = ["cdylib", "rlib"]
