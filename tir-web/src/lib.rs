@@ -19,7 +19,7 @@ pub fn draw(
     height: u32,
 ) -> Result<(), JsValue> {
 
-    let mut f = TessellationFigure::square();
+    let mut f = TessellationFigure::hexagon();
     let p = TessellationPlane {};
     let backend = Box::new(Backend);
     let m: Transform =
