@@ -25,6 +25,7 @@ Tessellation In Rust.
 * https://github.com/emoon/rust_minifb
 * http://www.rustinaction.com/
 * https://github.com/gfx-rs/wgpu
+* https://github.com/flutter-rs/flutter-rs
 
 ## License
 
