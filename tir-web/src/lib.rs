@@ -7,6 +7,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
 
+use web_sys::console;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
 use raqote::*;
@@ -14,10 +15,12 @@ use tessellations::render::*;
 use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
 use tessellations::tessellationline::PointIndexPath;
 
-#[wasm_bindgen]
-pub fn draw(ctx: &CanvasRenderingContext2d, width: u32, height: u32) -> Result<(), JsValue> {
-    let mut f = TessellationFigure::hexagon();
-    let p = TessellationPlane {};
+pub fn draw(
+    ctx: &CanvasRenderingContext2d,
+    width: u32,
+    height: u32,
+    f: &TessellationFigure,
+) -> Result<(), JsValue> {
     let backend = Box::new(Backend);
     let m: Transform =
         Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(100.0, 100.0));
@@ -43,14 +46,42 @@ fn app(name: &str) -> Result<(), JsValue> {
         .get_context("2d")?
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()?;
+    console::log_1(&"Draw".into());
+    let m1: Transform =
+        Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(100.0, 100.0));
+    let mi = m1.inverse().unwrap();
+    let mut f2 = TessellationFigure::square();
+    let frc = Rc::new(f2);
     let context = Rc::new(context);
     let pressed = Rc::new(Cell::new(false));
+    let mut sel_point: Option<PointIndexPath> = None;
+    let selected = Rc::new(sel_point);
+    draw(&context, 400, 400, &frc);
     {
         let context = context.clone();
         let pressed = pressed.clone();
+        let f = frc.clone();
+        let selected_point_index = selected.clone();
         let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-            context.begin_path();
-            context.move_to(event.offset_x() as f64, event.offset_y() as f64);
+            let p =
+                mi.transform_point(Point::new(event.offset_x() as f32, event.offset_y() as f32));
+
+            let s = match f.hitpoints(p, 0.05) {
+                Some(h) => Some(h),
+                _ => match f.hitline(p, 0.05) {
+                    Some(h) => {
+                        f.insert(h, p);
+                        draw(&context, 400, 400, &f);
+                        Some(PointIndexPath {
+                            line_index: h.line_index,
+                            point_index: h.point_index + 1,
+                            corrp: h.corrp,
+                        })
+                    }
+                    _ => None,
+                },
+            };
+	    selected_point_index = Rc::new(s);
             pressed.set(true);
         }) as Box<dyn FnMut(_)>);
         canvas.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
@@ -59,13 +90,18 @@ fn app(name: &str) -> Result<(), JsValue> {
     {
         let context = context.clone();
         let pressed = pressed.clone();
+        let mut f = frc.clone();
+        let selected_point_index = selected.clone();
         let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
             if pressed.get() {
-                context.line_to(event.offset_x() as f64, event.offset_y() as f64);
-                context.stroke();
-                context.begin_path();
-                context.move_to(event.offset_x() as f64, event.offset_y() as f64);
-		draw(&context,400,400);
+                console::log_1(&"Drag".into());
+                let p = mi
+                    .transform_point(Point::new(event.offset_x() as f32, event.offset_y() as f32));
+
+                if let Some(h) = selected_point_index.as_ref() {
+                    f.update(*h, p);
+                    draw(&context, 400, 400, &f);
+                }
             }
         }) as Box<dyn FnMut(_)>);
         canvas.add_event_listener_with_callback("mousemove", closure.as_ref().unchecked_ref())?;
@@ -76,15 +112,12 @@ fn app(name: &str) -> Result<(), JsValue> {
         let pressed = pressed.clone();
         let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
             pressed.set(false);
-            context.line_to(event.offset_x() as f64, event.offset_y() as f64);
-            context.stroke();
         }) as Box<dyn FnMut(_)>);
         canvas.add_event_listener_with_callback("mouseup", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
 
     Ok(())
-
 }
 
 #[wasm_bindgen(start)]
