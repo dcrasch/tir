@@ -19,3 +19,4 @@ npm run start
 ## Links
 
 * https://rustwasm.github.io/docs/book/game-of-life/hello-world.html
+* https://github.com/rustwasm/wasm-bindgen/tree/master/examples/paint
