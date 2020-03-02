@@ -2,6 +2,8 @@
 
 Tessellation In Rust.
 
+![tessellations-minifb.png](https://github.com/dcrasch/tir/blob/master/tessellations-minifb.png?raw=true)
+
 
 ## TODO
 
