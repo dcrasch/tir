@@ -1,13 +1,11 @@
-mod utils;
-
 use std::cell::Cell;
+use std::cell::RefCell;
 use std::rc::Rc;
 
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
 
-use web_sys::console;
 use web_sys::{CanvasRenderingContext2d, ImageData};
 
 use raqote::*;
@@ -24,8 +22,8 @@ pub fn draw(
     let backend = Box::new(Backend);
     let m: Transform =
         Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(100.0, 100.0));
-
-    let mut image = backend.render_to_image(&f, &m).unwrap();
+    let p = TessellationPlane {};
+    let mut image = backend.render_plane_to_image(&p, &f, &m).unwrap();
     let mut data = image.get_data_u8();
 
     let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)?;
@@ -46,26 +44,28 @@ fn app(name: &str) -> Result<(), JsValue> {
         .get_context("2d")?
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()?;
-    console::log_1(&"Draw".into());
+
     let m1: Transform =
         Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(100.0, 100.0));
     let mi = m1.inverse().unwrap();
-    let mut f2 = TessellationFigure::square();
-    let frc = Rc::new(f2);
+    let figure: Rc<RefCell<TessellationFigure>> =
+        Rc::new(RefCell::new(TessellationFigure::triangle()));
+    let selected_point_index: Rc<Cell<Option<PointIndexPath>>> = Rc::new(Cell::new(None));
+
     let context = Rc::new(context);
     let pressed = Rc::new(Cell::new(false));
-    let mut sel_point: Option<PointIndexPath> = None;
-    let selected = Rc::new(sel_point);
-    draw(&context, 400, 400, &frc);
+
+    draw(&context, 400, 400, &figure.borrow_mut());
     {
         let context = context.clone();
         let pressed = pressed.clone();
-        let f = frc.clone();
-        let selected_point_index = selected.clone();
+        let figure_cloned = figure.clone();
+        let selected_point_index_cloned = selected_point_index.clone();
+
         let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
             let p =
                 mi.transform_point(Point::new(event.offset_x() as f32, event.offset_y() as f32));
-
+            let mut f = figure_cloned.borrow_mut();
             let s = match f.hitpoints(p, 0.05) {
                 Some(h) => Some(h),
                 _ => match f.hitline(p, 0.05) {
@@ -81,7 +81,7 @@ fn app(name: &str) -> Result<(), JsValue> {
                     _ => None,
                 },
             };
-	    selected_point_index = Rc::new(s);
+            selected_point_index_cloned.set(s);
             pressed.set(true);
         }) as Box<dyn FnMut(_)>);
         canvas.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
@@ -90,16 +90,18 @@ fn app(name: &str) -> Result<(), JsValue> {
     {
         let context = context.clone();
         let pressed = pressed.clone();
-        let mut f = frc.clone();
-        let selected_point_index = selected.clone();
+        let figure_cloned = figure.clone();
+        let selected_point_index_cloned = selected_point_index.clone();
+
         let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+            let mut f = figure_cloned.borrow_mut();
+
             if pressed.get() {
-                console::log_1(&"Drag".into());
                 let p = mi
                     .transform_point(Point::new(event.offset_x() as f32, event.offset_y() as f32));
 
-                if let Some(h) = selected_point_index.as_ref() {
-                    f.update(*h, p);
+                if let Some(h) = selected_point_index_cloned.get() {
+                    f.update(h, p);
                     draw(&context, 400, 400, &f);
                 }
             }
