@@ -8,7 +8,8 @@ Tessellation In Rust.
 ## TODO
 
 - [x] Build simple ui with minifb
-- [ ] Build web ui with webassembly 
+- [x] Build web ui with webassembly 
+- [x] Publish tessellations crate on crates.io
 - [ ] Build flutter? android ios mobile app
 - [ ] Write a blog about building the program
 - [ ] Write more documentation about raqote and euclid.
