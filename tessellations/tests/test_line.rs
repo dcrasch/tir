@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use tessellation::tessellationline::{Point, PointIndexPath, TessellationLine};
+    use tessellations::tessellationline::{Point, PointIndexPath, TessellationLine};
 
     #[test]
     fn test_breakline() {

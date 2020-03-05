@@ -56,6 +56,7 @@ fn app(name: &str) -> Result<(), JsValue> {
     let pressed = Rc::new(Cell::new(false));
 
     draw(&context, 400, 400, &figure.borrow_mut());
+
     {
         let context = context.clone();
         let pressed = pressed.clone();

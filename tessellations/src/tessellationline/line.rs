@@ -9,6 +9,7 @@ pub type Point = euclid::default::Point2D<f32>;
 
 pub type Transform = euclid::default::Transform2D<f32>;
 
+/// Type to store the index of a point on a line
 #[derive(Debug, PartialEq, Clone, Copy)]
 pub struct PointIndexPath {
     pub line_index: usize,
@@ -43,6 +44,7 @@ where
         .collect())
 }
 
+/// Type to store the points on a line and the transform to the corresponding line
 #[derive(Debug, Serialize, Deserialize)]
 pub struct TessellationLine {
     #[serde(
@@ -90,6 +92,7 @@ impl TessellationLine {
         self.points.insert(index, point);
     }
 
+    /// Update the point on a line
     pub fn update(&mut self, index: usize, point: Point) {
         self.points[index] = point;
     }

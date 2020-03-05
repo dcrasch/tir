@@ -2,6 +2,7 @@ use crate::tessellationline::{Point, PointIndexPath, TessellationLine};
 use crate::tessellationshape::TessellationShape;
 use serde::{Deserialize, Serialize};
 
+/// Figure type with lines
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct TessellationFigure {
     pub lines: Vec<TessellationLine>,

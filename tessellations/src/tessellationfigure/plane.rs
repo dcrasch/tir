@@ -4,6 +4,7 @@ use crate::tessellationline::Point;
 pub struct TessellationPlane {}
 
 impl TessellationPlane {
+    /// for a figure and view and scale generate a grid of grid points
     pub fn grid(
         &self,
         figure: &TessellationFigure,

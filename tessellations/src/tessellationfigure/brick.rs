@@ -3,6 +3,7 @@ use crate::tessellationline::{Point, TessellationLine};
 use crate::tessellationshape::TessellationShape;
 
 impl TessellationFigure {
+    /// a basic figure a brick
     pub fn brick() -> Self {
         let mut f: TessellationFigure = TessellationFigure::new();
         f.gridincx = 1.0;

@@ -6,12 +6,14 @@ use raqote::*;
 pub struct Backend;
 
 pub trait Render {
+    /// Render a figure to a image
     fn render_to_image(
         &self,
         figure: &TessellationFigure,
         m: &Transform,
     ) -> Option<Box<dyn OutputImage>>;
 
+    /// Render a figure and tiling on a plane to a image
     fn render_plane_to_image(
         &self,
         plane: &TessellationPlane,

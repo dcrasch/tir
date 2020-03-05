@@ -27,6 +27,11 @@ scp dist/* you@example.com:/var/www
 
 or copy it to your docs directory and use github.io
 
+## Run tests
+
+```
+wasm-pack test
+```
 
 ## Notes
 
