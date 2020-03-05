@@ -5,6 +5,9 @@ authors = ["David Rasch"]
 license= "GPL-3.0"
 edition = "2018"
 repository = "https://github.com/dcrasch/tir"
+keywords = ["tessellation", "graphics"]
+description = "Library to create and draw periodic tilings of the plane."
+docs = "https://docs.rs/tessellations/"
 
 [lib]
 name="tessellations"
