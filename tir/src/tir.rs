@@ -54,6 +54,10 @@ fn main() {
             )
             .expect("json error"); //TODO set matrix
         }
+	if window.is_key_pressed(Key::E, KeyRepeat::No) {
+            println!("export to out.png");
+	    image.save_png(std::path::Path::new("out.png"));
+        }
 
         if window.is_key_pressed(Key::Key1, KeyRepeat::No) {
             selected_point_index = None;
