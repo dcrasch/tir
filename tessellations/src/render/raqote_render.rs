@@ -148,14 +148,14 @@ impl Render for Backend {
 
             for gridrow in &g {
                 if !figure.is_reversed {
-                    c = row % 2;
+                    c = row % 2; // use for brick
                 }
                 for gridpoint in gridrow {
                     if figure.is_reversed {
-                        c = rotdiv - 1;
+                        c = rotdiv - 1; // for diamond
                     }
                     if !figure.is_reversed && figure.gridincy < figure.gridincx {
-                        c = row % 3;
+                        c = row % 3; // used for hexagon
                     }
 
                     let m = Transform::create_rotation(angle)
@@ -240,7 +240,12 @@ impl Render for Backend {
 pub trait OutputImage {
     /// Saves rendered image to the selected path.
     fn save_png(&self, path: &std::path::Path) -> bool;
+
+    /// Returns a reference to the underlying pixel data
     fn get_data(&self) -> &[u32];
+
+    /// Returns a mut reference to the underlying pixel data as individual bytes with the order BGRA
+    /// on little endian.
     fn get_data_u8(&mut self) -> &mut [u8];
 }
 

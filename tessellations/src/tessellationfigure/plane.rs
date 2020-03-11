@@ -1,5 +1,6 @@
 use crate::tessellationfigure::TessellationFigure;
 use crate::tessellationline::Point;
+use raqote::Color;
 
 pub struct TessellationPlane {}
 
@@ -48,3 +49,5 @@ impl TessellationPlane {
         grid
     }
 }
+
+pub struct TessellationPalette(Color, Color, Color, Color);

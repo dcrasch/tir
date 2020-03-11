@@ -3,7 +3,7 @@ use crate::tessellationline::{Point, TessellationLine};
 use crate::tessellationshape::TessellationShape;
 
 impl TessellationFigure {
-    // Basic figure a square rotatated 90 degrees
+    /// Basic figure a square rotatated 90 degrees
     pub fn square90() -> Self {
         let mut f: TessellationFigure = TessellationFigure::new();
         f.gridincx = 2.0;
