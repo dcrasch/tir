@@ -37,6 +37,17 @@ or copy it to your docs directory and use github.io
 wasm-pack test
 ```
 
+
+## NPM Security audit
+
+
+Fix warnings of github security alerts
+```
+rm package-lock.json
+npm audit fix
+```
+
+
 ## Notes
 
 * Set mode: 'production' or it will be very slow
