@@ -18,7 +18,7 @@ module.exports = {
         }),
         // Have this example work in Edge which doesn't ship `TextEncoder` or
         // `TextDecoder` at this time.
-        
+        // https://github.com/rustwasm/wasm-bindgen/issues/1182
         new webpack.ProvidePlugin({
           TextDecoder: ['text-encoding', 'TextDecoder'],
           TextEncoder: ['text-encoding', 'TextEncoder']

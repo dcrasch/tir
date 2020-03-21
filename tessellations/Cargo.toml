@@ -13,7 +13,7 @@ name="tessellations"
 
 [dependencies]
 euclid = "0.20.7"
-raqote = { version="0.7.13", default-features=false}
+raqote = { version="0.7.14", default-features=false}
 serde = { version="1.0.104", features = ["derive"] }
 
 [dev-dependencies]
