@@ -6,6 +6,13 @@ https://dcrasch.github.io/tir/
 
 ## Build the project
 
+### Requirements
+
+* rust
+* wasm-pack
+* npm
+
+### Install
 ```
 npm install
 ```
@@ -46,7 +53,12 @@ Fix warnings of github security alerts
 rm package-lock.json
 npm audit fix
 ```
+or
 
+```
+npm upgrade
+npm install
+```
 
 ## Notes
 
