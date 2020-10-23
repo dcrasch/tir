@@ -55,7 +55,7 @@ fn app(name: &str) -> Result<(), JsValue> {
     let context = Rc::new(context);
     let pressed = Rc::new(Cell::new(false));
 
-    draw(&context, 400, 400, &figure.borrow_mut());
+    draw(&context, 400, 400, &figure.borrow_mut())?;
 
     {
         let context = context.clone();
@@ -72,7 +72,7 @@ fn app(name: &str) -> Result<(), JsValue> {
                 _ => match f.hitline(p, 0.05) {
                     Some(h) => {
                         f.insert(h, p);
-                        draw(&context, 400, 400, &f);
+                        draw(&context, 400, 400, &f).unwrap();
                         Some(PointIndexPath {
                             line_index: h.line_index,
                             point_index: h.point_index + 1,
@@ -88,6 +88,7 @@ fn app(name: &str) -> Result<(), JsValue> {
         canvas.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
+
     {
         let context = context.clone();
         let pressed = pressed.clone();
@@ -103,17 +104,17 @@ fn app(name: &str) -> Result<(), JsValue> {
 
                 if let Some(h) = selected_point_index_cloned.get() {
                     f.update(h, p);
-                    draw(&context, 400, 400, &f);
+                    draw(&context, 400, 400, &f).unwrap();
                 }
             }
         }) as Box<dyn FnMut(_)>);
         canvas.add_event_listener_with_callback("mousemove", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
+
     {
-        let context = context.clone();
         let pressed = pressed.clone();
-        let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
+        let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
             pressed.set(false);
         }) as Box<dyn FnMut(_)>);
         canvas.add_event_listener_with_callback("mouseup", closure.as_ref().unchecked_ref())?;
