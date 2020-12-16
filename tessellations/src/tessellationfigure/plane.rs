@@ -51,3 +51,12 @@ impl TessellationPlane {
 }
 
 pub struct TessellationPalette(Color, Color, Color, Color);
+
+impl TessellationPalette {
+    pub fn colorize(
+        &self,
+        figure: &TessellationFigure,
+        plane: &TessellationPlane
+    ) -> Vec<Vec<Color>>{
+    }
+}
