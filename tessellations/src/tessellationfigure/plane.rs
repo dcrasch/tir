@@ -58,5 +58,6 @@ impl TessellationPalette {
         figure: &TessellationFigure,
         plane: &TessellationPlane
     ) -> Vec<Vec<Color>>{
+	Vec::new()
     }
 }
