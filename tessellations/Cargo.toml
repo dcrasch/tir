@@ -12,9 +12,9 @@ docs = "https://docs.rs/tessellations/"
 name="tessellations"
 
 [dependencies]
-euclid = "0.20"
-raqote = { version="0.8", default-features=false}
+raqote = { version="0.8", default-features=false }
 serde = { version="1.0.104", features = ["derive"] }
+euclid = "0.20" ##must be same version as raqote
 
 [dev-dependencies]
 serde_json = "1.0.48"
