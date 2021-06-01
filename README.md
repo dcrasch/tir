@@ -10,7 +10,7 @@ Live view : https://dcrasch.github.io/tir/
 - [x] Build simple ui with minifb
 - [x] Build web ui with webassembly 
 - [x] Publish tessellations crate on crates.io
-- [ ] Build flutter? android ios mobile app
+- [ ] Build flutter? android ios mobile app using rid
 - [ ] Write a blog about building the program
 - [ ] Write more documentation about raqote and euclid.
 
@@ -30,6 +30,7 @@ Live view : https://dcrasch.github.io/tir/
 * https://github.com/gfx-rs/wgpu
 * https://github.com/flutter-rs/flutter-rs
 * https://github.com/brickpop/flutter-rust-ffi
+* https://thlorenz.com/rid-site/docs/getting-started/introduction/
 
 ## License
 
