@@ -7,18 +7,14 @@ edition = "2018"
 repository = "https://github.com/dcrasch/tir"
 description = "Tessellation for the web"
 
-[lib]
-crate-type = ["cdylib"]
-
 [dependencies]
-wasm-bindgen = "0.2.72"
+console_error_panic_hook = "0.1"
+wasm-bindgen = "0.2.74"
+wee_alloc = "0.4"
 serde_json = "1.0"
 tessellations = { path = "../tessellations" }
 raqote = { version="0.8", default-features=false}
 euclid = "0.20"
-
-[dev-dependencies]
-wasm-bindgen-test = "0.3.9"
 
 [profile.release]
 # Tell `rustc` to optimize for small code size.

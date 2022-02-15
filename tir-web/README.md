@@ -10,55 +10,18 @@ https://dcrasch.github.io/tir/
 
 * rust
 * wasm-pack
-* npm
+* trunk https://trunkrs.dev/
 
-### Install
-```
-npm install
-```
 
-## Run the project
+## deployment
+
 
 ```
-npm run serve
-```
-
-
-## Deploy the project
-
-Build the distribution
-
-```
-npm run build
-```
-
-```
+trunk --release build
 scp dist/* you@example.com:/var/www
 ```
 
 or copy it to your docs directory and use github.io
-
-## Run tests
-
-```
-wasm-pack test
-```
-
-
-## NPM Security audit
-
-
-Fix warnings of github security alerts
-```
-rm package-lock.json
-npm audit fix
-```
-or
-
-```
-npm upgrade
-npm install
-```
 
 ## Notes
 
