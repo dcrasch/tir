@@ -15,10 +15,10 @@ https://dcrasch.github.io/tir/
 
 ## deployment
 
-
+Use `--public-url` to set the base url.
 ```
 trunk --release build
-scp dist/* you@example.com:/var/www
+scp ../docs/* you@example.com:/var/www
 ```
 
 or copy it to your docs directory and use github.io
