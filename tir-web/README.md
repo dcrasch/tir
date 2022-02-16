@@ -26,10 +26,11 @@ or copy it to your docs directory and use github.io
 ## Notes
 
 * Set mode: 'production' or it will be very slow
-* Use the text-encoding for Internet Edge, or it will not load 
+* Doesn't work in old Edge browsers (12-18) https://caniuse.com/mdn-api_textencoder_encoding
 
 ## Links
 
+* https://trunkrs.dev/
 * https://rustwasm.github.io/docs/wasm-bindgen/
 * https://rustwasm.github.io/docs/book/game-of-life/hello-world.html
 * https://github.com/rustwasm/wasm-bindgen/tree/master/examples/paint
