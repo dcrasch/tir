@@ -27,8 +27,7 @@ pub fn draw(
     f: &TessellationFigure,
 ) -> Result<(), JsValue> {
     let backend = Box::new(Backend);
-    let m: Transform =
-        Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(100.0, 100.0));
+    let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let p = TessellationPlane {};
     let mut image = backend.render_plane_to_image(&p, &f, &m).unwrap();
     let mut data = image.get_data_u8();
@@ -52,8 +51,7 @@ fn app(name: &str) -> Result<(), JsValue> {
         .unwrap()
         .dyn_into::<web_sys::CanvasRenderingContext2d>()?;
 
-    let m1: Transform =
-        Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(100.0, 100.0));
+    let m1: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let mi = m1.inverse().unwrap();
     let figure: Rc<RefCell<TessellationFigure>> =
         Rc::new(RefCell::new(TessellationFigure::triangle()));

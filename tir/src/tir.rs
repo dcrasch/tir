@@ -1,102 +1,133 @@
+use pixels::{Error, Pixels, SurfaceTexture};
 use std::fs;
 
-use minifb::{Key, KeyRepeat, MouseButton, MouseMode, Window, WindowOptions};
+use winit::{
+    dpi::LogicalSize,
+    event::{Event, VirtualKeyCode},
+    event_loop::{ControlFlow, EventLoop},
+    window::WindowBuilder,
+};
+use winit_input_helper::WinitInputHelper;
+
 use raqote::*;
 
 use tessellations::render::*;
 use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
 use tessellations::tessellationline::PointIndexPath;
 
-const WIDTH: usize = 400;
-const HEIGHT: usize = 400;
+const WIDTH: u32 = 400;
+const HEIGHT: u32 = 400;
 
-fn main() {
-    let mut window = Window::new(
-        "Tessellation",
-        WIDTH,
-        HEIGHT,
-        WindowOptions {
-            ..WindowOptions::default()
-        },
-    )
-    .unwrap();
-    let size = window.get_size();
+fn main() -> Result<(), Error> {
+    let event_loop = EventLoop::new();
+    let mut input = WinitInputHelper::new();
+    let window = {
+        let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
+        WindowBuilder::new()
+            .with_title("Hello Tessellations")
+            .with_inner_size(size)
+            .with_min_inner_size(size)
+            .build(&event_loop)
+            .unwrap()
+    };
+    let mut pixels = {
+        let window_size = window.inner_size();
+        let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
+        Pixels::new(WIDTH, HEIGHT, surface_texture)?
+    };
     let mut f = TessellationFigure::square();
     let p = TessellationPlane {};
     let backend = Box::new(Backend);
     let mut drag: Option<(f32, f32)> = None;
-    let m: Transform =
-        Transform::create_scale(100.0, 100.0).post_translate(euclid::vec2(100.0, 100.0));
+    let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let mi = m.inverse().unwrap();
     let mut selected_point_index: Option<PointIndexPath> = None;
 
-    // Limit to max ~60 fps update rate
-    window.limit_update_rate(Some(std::time::Duration::from_micros(16600)));
-    while window.is_open() && !window.is_key_down(Key::Escape) {
-        let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
-        window
-            .update_with_buffer(image.get_data(), size.0, size.1)
-            .unwrap();
-        if window.is_key_pressed(Key::S, KeyRepeat::No) {
-            println!("save");
-            fs::write(
-                "figure.json",
-                serde_json::to_string(&f).expect("json error").as_bytes(),
-            )
-            .expect("file error");
-        }
-        if window.is_key_pressed(Key::L, KeyRepeat::No) {
-            println!("load");
-            f = serde_json::from_str(
-                fs::read_to_string("figure.json")
-                    .expect("file error")
-                    .as_str(),
-            )
-            .expect("json error"); //TODO set matrix
-        }
-        if window.is_key_pressed(Key::E, KeyRepeat::No) {
-            println!("export to out.png");
-            image.save_png(std::path::Path::new("out.png"));
-        }
+    event_loop.run(move |event, _, control_flow| {
+        if let Event::RedrawRequested(_) = event {
+            let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
+            for (dst, &src) in pixels
+                .get_frame()
+                .chunks_exact_mut(4)
+                .zip(image.get_data().iter())
+            {
+                dst[0] = (src >> 16) as u8;
+                dst[1] = (src >> 8) as u8;
+                dst[2] = src as u8;
+                dst[3] = (src >> 24) as u8;
+            }
 
-        if window.is_key_pressed(Key::Key1, KeyRepeat::No) {
-            selected_point_index = None;
-            f = TessellationFigure::square();
+            if pixels.render().is_err() {
+                *control_flow = ControlFlow::Exit;
+                return;
+            }
         }
+        if input.update(&event) {
+            if input.key_pressed(VirtualKeyCode::Escape)
+                || input.key_pressed(VirtualKeyCode::Q)
+                || input.quit()
+            {
+                *control_flow = ControlFlow::Exit;
+            }
+            if input.key_pressed(VirtualKeyCode::S) {
+                fs::write(
+                    "figure.json",
+                    serde_json::to_string(&f).expect("json error").as_bytes(),
+                )
+                .expect("file error");
+            }
+            if input.key_pressed(VirtualKeyCode::L) {
+                f = serde_json::from_str(
+                    fs::read_to_string("figure.json")
+                        .expect("file error")
+                        .as_str(),
+                )
+                .expect("json error"); //TODO set matrix
+                window.request_redraw();
+            }
+            if input.key_pressed(VirtualKeyCode::E) {
+                let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
+                image.save_png(std::path::Path::new("out.png"));
+            }
+            if input.key_pressed(VirtualKeyCode::Key1) {
+                f = TessellationFigure::square();
+                window.request_redraw();
+            }
+            if input.key_pressed(VirtualKeyCode::Key2) {
+                f = TessellationFigure::triangle();
+                window.request_redraw();
+            }
+            if input.key_pressed(VirtualKeyCode::Key3) {
+                f = TessellationFigure::square90();
+                window.request_redraw();
+            }
+            if input.key_pressed(VirtualKeyCode::Key4) {
+                f = TessellationFigure::diamond();
+                window.request_redraw();
+            }
+            if input.key_pressed(VirtualKeyCode::Key5) {
+                f = TessellationFigure::brick();
+                window.request_redraw();
+            }
+            if input.key_pressed(VirtualKeyCode::Key6) {
+                f = TessellationFigure::hexagon();
+                window.request_redraw();
+            }
+            let mouse = input.mouse();
 
-        if window.is_key_pressed(Key::Key2, KeyRepeat::No) {
-            selected_point_index = None;
-            f = TessellationFigure::triangle();
-        }
+            if input.mouse_held(0) && mouse.is_some() {
+                let mouse = mouse.unwrap();
 
-        if window.is_key_pressed(Key::Key3, KeyRepeat::No) {
-            selected_point_index = None;
-            f = TessellationFigure::square90();
-        }
-
-        if window.is_key_pressed(Key::Key4, KeyRepeat::No) {
-            selected_point_index = None;
-            f = TessellationFigure::diamond();
-        }
-
-        if window.is_key_pressed(Key::Key5, KeyRepeat::No) {
-            selected_point_index = None;
-            f = TessellationFigure::brick();
-        }
-
-        if window.is_key_pressed(Key::Key6, KeyRepeat::No) {
-            selected_point_index = None;
-            f = TessellationFigure::hexagon();
-        }
-
-        if let Some(mouse) = window.get_mouse_pos(MouseMode::Discard) {
-            if window.get_mouse_down(MouseButton::Left) {
-                let p = mi.transform_point(Point::new(mouse.0, mouse.1));
+                let p = mi.transform_point(Point::new(
+                    mouse.0 / window.scale_factor() as f32,
+                    mouse.1 / window.scale_factor() as f32,
+                ));
                 match drag {
                     Some(d) => {
                         if d != mouse {
                             if let Some(h) = selected_point_index {
-                                f.update(h, p)
+                                f.update(h, p);
+                                window.request_redraw();
                             }
                         }
                     }
@@ -116,10 +147,10 @@ fn main() {
                     },
                 }
                 drag = Some(mouse);
-            } else {
+            } else if input.mouse_released(0) {
                 selected_point_index = None;
                 drag = None;
             }
         }
-    }
+    });
 }

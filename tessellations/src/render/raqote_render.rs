@@ -158,9 +158,9 @@ impl Render for Backend {
                         c = row % 3; // used for hexagon
                     }
 
-                    let m = Transform::create_rotation(angle)
-                        .post_scale(70.0, 70.0)
-                        .post_translate(euclid::vec2(gridpoint.x, gridpoint.y));
+                    let m = Transform::rotation(angle)
+                        .then_scale(70.0, 70.0)
+                        .then_translate(euclid::vec2(gridpoint.x, gridpoint.y));
                     let points = figure
                         .points()
                         .windows(2)

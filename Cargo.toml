@@ -4,3 +4,4 @@ members = [
 	"tir-web",
 	"tessellations"
 	]
+resolver="2"

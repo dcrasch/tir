@@ -65,8 +65,7 @@ pub struct TessellationLine {
 
 impl TessellationLine {
     pub fn new(tx: f32, ty: f32, angle: f32) -> Self {
-        let transform =
-            Transform::create_rotation(Angle::degrees(angle)).post_translate(vec2(tx, ty));
+        let transform = Transform::rotation(Angle::degrees(-angle)).then_translate(vec2(tx, ty));
         Self {
             points: Vec::<Point>::new(),
             transform,

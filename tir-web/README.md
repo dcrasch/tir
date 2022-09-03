@@ -17,11 +17,18 @@ https://dcrasch.github.io/tir/
 
 Use `--public-url` to set the base url.
 ```
-trunk --release build
+trunk build --release
 scp ../docs/* you@example.com:/var/www
 ```
 
 or copy it to your docs directory and use github.io
+
+## development
+
+Start dev server and opens a browser.
+```
+trunk serve --release --open
+```
 
 ## Notes
 

@@ -1,9 +1,9 @@
 [package]
 name = "tessellations"
-version = "0.1.1"
+version = "0.1.2"
 authors = ["David Rasch"]
 license= "GPL-3.0"
-edition = "2018"
+edition = "2021"
 repository = "https://github.com/dcrasch/tir"
 keywords = ["tessellation", "graphics"]
 description = "Library to create and draw periodic tilings of the plane."
@@ -12,9 +12,9 @@ docs = "https://docs.rs/tessellations/"
 name="tessellations"
 
 [dependencies]
-raqote = { version="0.8", default-features=false }
+raqote = { version="0.8.1", default-features = false, features=["png"] }
 serde = { version="1.0.104", features = ["derive"] }
-euclid = "0.20" ##must be same version as raqote
+euclid = "0.22" ##must be same version as raqote
 
 [dev-dependencies]
 serde_json = "1.0.48"

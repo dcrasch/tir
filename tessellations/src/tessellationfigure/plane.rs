@@ -56,8 +56,8 @@ impl TessellationPalette {
     pub fn colorize(
         &self,
         figure: &TessellationFigure,
-        plane: &TessellationPlane
-    ) -> Vec<Vec<Color>>{
-	Vec::new()
+        plane: &TessellationPlane,
+    ) -> Vec<Vec<Color>> {
+        Vec::new()
     }
 }
