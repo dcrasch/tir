@@ -7,7 +7,8 @@ edition = "2021"
 repository = "https://github.com/dcrasch/tir"
 keywords = ["tessellation", "graphics"]
 description = "Library to create and draw periodic tilings of the plane."
-docs = "https://docs.rs/tessellations/"
+documentation = "https://docs.rs/tessellations/"
+
 [lib]
 name="tessellations"
 

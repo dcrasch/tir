@@ -37,16 +37,16 @@ impl TessellationFigure {
     /// Returns a list of the points and transformed points in the order of the figure.
     pub fn points(&self) -> Vec<Point> {
         if self.is_reversed {
-            (&self.lines)
+            (self.lines)
                 .iter()
                 .flat_map(|l| l.dpoints())
-                .chain((&self.lines).iter().flat_map(|l| l.cpoints()).rev())
+                .chain((self.lines).iter().flat_map(|l| l.cpoints()).rev())
                 .collect()
         } else {
-            (&self.lines)
+            (self.lines)
                 .iter()
                 .flat_map(|l| l.dpoints())
-                .chain((&self.lines).iter().flat_map(|l| l.crpoints()))
+                .chain((self.lines).iter().flat_map(|l| l.crpoints()))
                 .collect()
         }
     }

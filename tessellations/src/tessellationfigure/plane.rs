@@ -1,6 +1,5 @@
 use crate::tessellationfigure::TessellationFigure;
 use crate::tessellationline::Point;
-use raqote::Color;
 
 pub struct TessellationPlane {}
 
@@ -18,16 +17,10 @@ impl TessellationPlane {
         let igy = dscale * figure.gridincy;
         let shx = dscale * figure.shiftx;
         let shy = dscale * figure.shifty;
-        let mut minx: f32;
-        let mut miny: f32;
-        let maxx: f32;
-        let mut maxy: f32;
-
-        minx = -igx * 2.0;
-        miny = -igy * 2.0;
-
-        maxx = width + igx;
-        maxy = height + igy;
+        let mut minx: f32 = -igx * 2.0;
+        let mut miny: f32 = -igy * 2.0;
+        let maxx: f32 = width + igx;
+        let mut maxy: f32 = height + igy;
         let mut sx;
         let mut sy;
         while miny <= maxy {
@@ -47,17 +40,5 @@ impl TessellationPlane {
             }
         }
         grid
-    }
-}
-
-pub struct TessellationPalette(Color, Color, Color, Color);
-
-impl TessellationPalette {
-    pub fn colorize(
-        &self,
-        figure: &TessellationFigure,
-        plane: &TessellationPlane,
-    ) -> Vec<Vec<Color>> {
-        Vec::new()
     }
 }

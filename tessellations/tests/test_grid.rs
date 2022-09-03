@@ -1,7 +1,7 @@
 #[cfg(test)]
 mod tests {
     use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
-    use tessellations::tessellationline::{Point, PointIndexPath, TessellationLine};
+    use tessellations::tessellationline::Point;
 
     #[test]
     fn test_grid_square() {

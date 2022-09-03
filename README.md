@@ -38,4 +38,4 @@ This code is distributed under a GPL v3 style license, see the LICENSE file for 
 
 ## Copyright
 
-Tessellation in Rust Copyright (c) 2020 David Rasch
+Tessellation in Rust Copyright (c) 2022 David Rasch

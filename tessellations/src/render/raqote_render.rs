@@ -140,7 +140,7 @@ impl Render for Backend {
             a: 0xff,
         });
         let mut row = 0;
-        let g = plane.grid(&figure, 400.0, 400.0, 70.);
+        let g = plane.grid(figure, 400.0, 400.0, 70.);
         let mut c = 0;
 
         for rotdiv in 1..=figure.rotdiv {

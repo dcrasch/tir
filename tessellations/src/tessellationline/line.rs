@@ -10,7 +10,7 @@ pub type Point = euclid::default::Point2D<f32>;
 pub type Transform = euclid::default::Transform2D<f32>;
 
 /// Type to store the index of a point on a line
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub struct PointIndexPath {
     pub line_index: usize,
     pub point_index: usize,

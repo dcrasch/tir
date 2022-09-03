@@ -44,3 +44,7 @@ trunk serve --release --open
 * https://gtk-rs.org/docs-src/tutorial/closures
 * https://github.com/sn99/wasm-template-rust
 * https://rustwasm.github.io/book/reference/deploying-to-production.html#ensure-that-your-http-server-uses-the-applicationwasm-mime-type
+
+## Copyright
+
+Tessellation in Rust Copyright (c) 2022 David Rasch

@@ -29,10 +29,10 @@ pub fn draw(
     let backend = Box::new(Backend);
     let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let p = TessellationPlane {};
-    let mut image = backend.render_plane_to_image(&p, &f, &m).unwrap();
-    let mut data = image.get_data_u8();
+    let mut image = backend.render_plane_to_image(&p, f, &m).unwrap();
+    let data = image.get_data_u8();
 
-    let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(&mut data), width, height)?;
+    let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(data), width, height)?;
     ctx.put_image_data(&data, 0.0, 0.0)
 }
 
@@ -95,10 +95,10 @@ fn app(name: &str) -> Result<(), JsValue> {
     }
 
     {
-        let context = context.clone();
+        let context = context;
         let pressed = pressed.clone();
-        let figure_cloned = figure.clone();
-        let selected_point_index_cloned = selected_point_index.clone();
+        let figure_cloned = figure;
+        let selected_point_index_cloned = selected_point_index;
 
         let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
             let mut f = figure_cloned.borrow_mut();
@@ -118,7 +118,7 @@ fn app(name: &str) -> Result<(), JsValue> {
     }
 
     {
-        let pressed = pressed.clone();
+        let pressed = pressed;
         let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
             pressed.set(false);
         }) as Box<dyn FnMut(_)>);
@@ -131,5 +131,5 @@ fn app(name: &str) -> Result<(), JsValue> {
 
 fn main() {
     set_panic_hook();
-    app("editor");
+    app("editor").expect("Failed to start editor");
 }

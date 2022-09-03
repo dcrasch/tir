@@ -113,40 +113,39 @@ fn main() -> Result<(), Error> {
                 f = TessellationFigure::hexagon();
                 window.request_redraw();
             }
-            let mouse = input.mouse();
 
-            if input.mouse_held(0) && mouse.is_some() {
-                let mouse = mouse.unwrap();
-
-                let p = mi.transform_point(Point::new(
-                    mouse.0 / window.scale_factor() as f32,
-                    mouse.1 / window.scale_factor() as f32,
-                ));
-                match drag {
-                    Some(d) => {
-                        if d != mouse {
-                            if let Some(h) = selected_point_index {
-                                f.update(h, p);
-                                window.request_redraw();
+            if input.mouse_held(0) {
+                if let Some(mouse) = input.mouse() {
+                    let p = mi.transform_point(Point::new(
+                        mouse.0 / window.scale_factor() as f32,
+                        mouse.1 / window.scale_factor() as f32,
+                    ));
+                    match drag {
+                        Some(d) => {
+                            if d != mouse {
+                                if let Some(h) = selected_point_index {
+                                    f.update(h, p);
+                                    window.request_redraw();
+                                }
                             }
                         }
-                    }
-                    _ => match f.hitpoints(p, 0.05) {
-                        Some(h) => selected_point_index = Some(h),
-                        _ => match f.hitline(p, 0.05) {
-                            Some(h) => {
-                                f.insert(h, p);
-                                selected_point_index = Some(PointIndexPath {
-                                    line_index: h.line_index,
-                                    point_index: h.point_index + 1,
-                                    corrp: h.corrp,
-                                });
-                            }
-                            _ => selected_point_index = None,
+                        _ => match f.hitpoints(p, 0.05) {
+                            Some(h) => selected_point_index = Some(h),
+                            _ => match f.hitline(p, 0.05) {
+                                Some(h) => {
+                                    f.insert(h, p);
+                                    selected_point_index = Some(PointIndexPath {
+                                        line_index: h.line_index,
+                                        point_index: h.point_index + 1,
+                                        corrp: h.corrp,
+                                    });
+                                }
+                                _ => selected_point_index = None,
+                            },
                         },
-                    },
+                    }
+                    drag = Some(mouse);
                 }
-                drag = Some(mouse);
             } else if input.mouse_released(0) {
                 selected_point_index = None;
                 drag = None;

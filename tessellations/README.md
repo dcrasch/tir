@@ -13,9 +13,9 @@ cargo run --example squarepng
 
 The output in out.png is a tiling of a square.
 
-### Minifb editor
+### Tessellations Pixels editor
 
-Tiling editor written in rust using minifb framework.
+Tiling editor written in rust using pixels framework.
 
 Code: https://github.com/dcrasch/tir/tree/master/tir
 
@@ -26,10 +26,11 @@ Tiling editor written in rust using the web-sys wasm framework.
 Code: https://github.com/dcrasch/tir/tree/master/tir-web
 
 Live version: https://dcrasch.github.io/tir/
+
 ## License
 
 This code is distributed under a GPL v3 style license, see the LICENSE file for complete information.
 
 ## Copyright
 
-Tessellation in Rust Copyright (c) 2020 David Rasch
+Tessellation in Rust Copyright (c) 2022 David Rasch
