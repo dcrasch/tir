@@ -98,4 +98,15 @@ impl TessellationFigure {
         };
         self.lines[point_index_path.line_index].update(point_index_path.point_index, p1);
     }
+
+    pub fn load(&mut self,other: Self) {
+        self.lines = other.lines;
+        self.gridincx = other.gridincx;
+        self.gridincy = other.gridincy;
+        self.shiftx = other.shiftx;
+        self.shifty = other.shifty;
+        self.is_reversed = other.is_reversed;
+        self.shape= other.shape;
+        self.rotdiv = other.rotdiv;
+    }
 }

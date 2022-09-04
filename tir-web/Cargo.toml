@@ -21,17 +21,17 @@ euclid = "0.22"
 opt-level = "z"
 
 [dependencies.web-sys]
-version = "0.3.4"
+version = "0.3.55"
 features = [
   'CanvasRenderingContext2d',
   'ImageData',
-
   'CssStyleDeclaration',
   'Document',
   'Element',
   'EventTarget',
   'HtmlCanvasElement',
   'HtmlElement',
+  'KeyboardEvent',
   'MouseEvent',
   'Node',
   'Window'

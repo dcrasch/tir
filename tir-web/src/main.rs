@@ -95,9 +95,9 @@ fn app(name: &str) -> Result<(), JsValue> {
     }
 
     {
-        let context = context;
+        let context = context.clone();
         let pressed = pressed.clone();
-        let figure_cloned = figure;
+        let figure_cloned = figure.clone();
         let selected_point_index_cloned = selected_point_index;
 
         let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
@@ -123,6 +123,22 @@ fn app(name: &str) -> Result<(), JsValue> {
             pressed.set(false);
         }) as Box<dyn FnMut(_)>);
         canvas.add_event_listener_with_callback("mouseup", closure.as_ref().unchecked_ref())?;
+        closure.forget();
+    }
+
+    {
+        let context = context.clone();
+        let figure_cloned = figure.clone();
+        let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+            let mut f = figure_cloned.borrow_mut();
+            if event.key() == "1" {
+                f.load(TessellationFigure::brick());
+            } else if event.key() == "2" {
+                f.load(TessellationFigure::triangle());
+            }
+            draw(&context, 400, 400, &f).unwrap();
+        }) as Box<dyn FnMut(_)>);
+        document.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
 
