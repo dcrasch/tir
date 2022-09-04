@@ -9,9 +9,22 @@ https://dcrasch.github.io/tir/
 ### Requirements
 
 * rust
-* wasm-pack
 * trunk https://trunkrs.dev/
 
+### Install rust and wasm with rustup
+
+1. Goto https://rustup.rs/
+2. Follow the instruction to install rustup and rust
+3. Add rust for wasm:
+```
+rustup target add wasm32-unknown-unknown
+```
+
+### Install trunk
+
+```
+cargo install trunk
+```
 
 ## deployment
 
@@ -37,6 +50,7 @@ trunk serve --release --open
 
 ## Links
 
+* https://rustup.rs/
 * https://trunkrs.dev/
 * https://rustwasm.github.io/docs/wasm-bindgen/
 * https://rustwasm.github.io/docs/book/game-of-life/hello-world.html
