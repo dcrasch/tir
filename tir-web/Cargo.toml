@@ -1,6 +1,6 @@
 [package]
 name = "tir-web"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["David Rasch"]
 license= "GPL-3.0"
 edition = "2021"
@@ -10,15 +10,13 @@ description = "Tessellation for the web"
 [dependencies]
 console_error_panic_hook = "0.1"
 wasm-bindgen = "0.2.82"
-wee_alloc = "0.4"
 serde_json = "1.0"
 tessellations = { path = "../tessellations" }
 raqote = { version="0.8.1", default-features = false, features=["png"]}
 euclid = "0.22"
 
 [profile.release]
-# Tell `rustc` to optimize for small code size.
-opt-level = "z"
+lto = true
 
 [dependencies.web-sys]
 version = "0.3.55"
