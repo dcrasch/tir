@@ -10,4 +10,8 @@ fn main() {
     let backend = Box::new(Backend);
     let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
     image.save_png(std::path::Path::new("out.png"));
+
+    let svgbackend = Box::new(SVGBackend);
+    let _ = svgbackend.compose(&f,&m).unwrap();
+
 }
