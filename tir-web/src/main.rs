@@ -10,43 +10,36 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
 
-use web_sys::{CanvasRenderingContext2d, ImageData};
-
 use raqote::*;
 use tessellations::render::*;
 use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
 use tessellations::tessellationline::PointIndexPath;
 
 pub fn draw(
-    ctx: &CanvasRenderingContext2d,
-    width: u32,
-    height: u32,
+    ctx: &web_sys::HtmlElement,
+    _: u32,
+    _: u32,
     f: &TessellationFigure,
 ) -> Result<(), JsValue> {
-    let backend = Box::new(Backend);
+    let backend = Box::new(SVGBackend);
     let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let p = TessellationPlane {};
-    let mut image = backend.render_plane_to_image(&p, f, &m).unwrap();
-    let data = image.get_data_u8();
-
-    let data = ImageData::new_with_u8_clamped_array_and_sh(Clamped(data), width, height)?;
-    ctx.put_image_data(&data, 0.0, 0.0)
+    let svg_document = backend.compose_plane(&p, f, &m).unwrap();
+    Ok(ctx.set_inner_html(&svg_document.get_data()))
 }
 
 fn app(name: &str) -> Result<(), JsValue> {
     let document = web_sys::window().unwrap().document().unwrap();
-    let editor = document.get_element_by_id(name);
-    let canvas = document
-        .create_element("canvas")?
-        .dyn_into::<web_sys::HtmlCanvasElement>()?;
-    editor.unwrap().append_child(&canvas)?;
-    canvas.set_width(400);
-    canvas.set_height(400);
-    canvas.style().set_property("border", "solid")?;
-    let context = canvas
-        .get_context("2d")?
+    let body = document.body().expect("Could not access document.body");
+    let editor = document
+        .get_element_by_id(name)
         .unwrap()
-        .dyn_into::<web_sys::CanvasRenderingContext2d>()?;
+        .dyn_into::<web_sys::HtmlElement>()?;
+    let context = document
+        .create_element("div")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlElement>()?;
+    editor.append_child(&context);
 
     let m1: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let mi = m1.inverse().unwrap();
@@ -87,7 +80,7 @@ fn app(name: &str) -> Result<(), JsValue> {
             selected_point_index_cloned.set(s);
             pressed.set(true);
         }) as Box<dyn FnMut(_)>);
-        canvas.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
+        editor.add_event_listener_with_callback("mousedown", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
 
@@ -110,7 +103,7 @@ fn app(name: &str) -> Result<(), JsValue> {
                 }
             }
         }) as Box<dyn FnMut(_)>);
-        canvas.add_event_listener_with_callback("mousemove", closure.as_ref().unchecked_ref())?;
+        editor.add_event_listener_with_callback("mousemove", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
 
@@ -119,7 +112,7 @@ fn app(name: &str) -> Result<(), JsValue> {
         let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
             pressed.set(false);
         }) as Box<dyn FnMut(_)>);
-        canvas.add_event_listener_with_callback("mouseup", closure.as_ref().unchecked_ref())?;
+        editor.add_event_listener_with_callback("mouseup", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
 
@@ -135,7 +128,7 @@ fn app(name: &str) -> Result<(), JsValue> {
             }
             draw(&context, 400, 400, &f).unwrap();
         }) as Box<dyn FnMut(_)>);
-        document.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
+        editor.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
 

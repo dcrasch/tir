@@ -68,7 +68,6 @@ impl Compose for SVGBackend {
         let mut c = 0;
         let mut document = Document::new().set("viewBox", (0, 0, 400, 400));
         let colors = vec!["red", "green", "blue", "black"];
-
         for rotdiv in 1..=figure.rotdiv {
             let angle = Angle::degrees(360.0 * (rotdiv as f32) / (figure.rotdiv as f32));
 
@@ -121,17 +120,53 @@ impl Compose for SVGBackend {
                 row += 1;
             }
         }
+	let points = figure
+            .points()
+            .windows(2)
+            .filter_map(|l| {
+                if l[0] != l[1] {
+                    Some(m.transform_point(l[0]))
+                } else {
+                    None
+                }
+            })
+            .collect::<Vec<Point>>();
+
+	let p1 = points[0];
+	
+	let mut pb = Data::new();
+        pb.append(Command::Move(Absolute, (p1.x, p1.y).into()));
+	
+        for p in points.iter().skip(1) {
+            pb.append(Command::Line(Absolute, (p.x, p.y).into()));
+        }
+        pb.append(Command::Close);
+        let path = Path::new()
+            .set("fill", "none")
+            .set("stroke", "yellow")
+            .set("stroke-width", 3)
+            .set("d", pb);
+	
+        document.append(path);
+	
         Some(document)
     }
 }
 
 pub trait SVGImage {
     fn save_svg(&self, path: &std::path::Path) -> bool;
+    fn get_data(&self) -> String;
 }
 
 impl SVGImage for Document {
     fn save_svg(&self, path: &::std::path::Path) -> bool {
         svg::save(path, self).is_ok()
+    }
+
+    fn get_data(&self) -> String {
+	let mut data = vec![];
+	svg::write(&mut data, self);
+	String::from_utf8(data).unwrap()
     }
 }
 
