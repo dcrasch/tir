@@ -12,6 +12,8 @@ cargo run --example squarepng
 ```
 
 The output in out.png is a tiling of a square.
+And plane.svg is the tiling of a square using the svg document format.
+
 
 ### Tessellations Pixels editor
 

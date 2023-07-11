@@ -1,6 +1,6 @@
 [package]
 name = "tessellations"
-version = "0.1.2"
+version = "0.2.0"
 authors = ["David Rasch"]
 license= "GPL-3.0"
 edition = "2021"
@@ -13,7 +13,8 @@ documentation = "https://docs.rs/tessellations/"
 name="tessellations"
 
 [dependencies]
-raqote = { version="0.8.1", default-features = false, features=["png"] }
+raqote = { version="0.8.2", default-features = false, features=["png"] }
+svg = "0.13"
 serde = { version="1.0.104", features = ["derive"] }
 euclid = "0.22" ##must be same version as raqote
 

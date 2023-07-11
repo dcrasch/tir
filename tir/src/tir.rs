@@ -38,6 +38,7 @@ fn main() -> Result<(), Error> {
     let mut f = TessellationFigure::square();
     let p = TessellationPlane {};
     let backend = Box::new(Backend);
+    let svgbackend = Box::new(SVGBackend);
     let mut drag: Option<(f32, f32)> = None;
     let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let mi = m.inverse().unwrap();
@@ -88,6 +89,10 @@ fn main() -> Result<(), Error> {
             if input.key_pressed(VirtualKeyCode::E) {
                 let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
                 image.save_png(std::path::Path::new("out.png"));
+            }
+            if input.key_pressed(VirtualKeyCode::S) {
+                let svg = svgbackend.compose_plane(&p, &f, &m).unwrap();
+                svg.save_svg(std::path::Path::new("out.svg"));
             }
             if input.key_pressed(VirtualKeyCode::Key1) {
                 f = TessellationFigure::square();
