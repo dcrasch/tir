@@ -7,7 +7,6 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use wasm_bindgen::prelude::*;
-use wasm_bindgen::Clamped;
 use wasm_bindgen::JsCast;
 
 use raqote::*;
@@ -20,17 +19,16 @@ pub fn draw(
     _: u32,
     _: u32,
     f: &TessellationFigure,
-) -> Result<(), JsValue> {
+) {
     let backend = Box::new(SVGBackend);
     let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let p = TessellationPlane {};
     let svg_document = backend.compose_plane(&p, f, &m).unwrap();
-    Ok(ctx.set_inner_html(&svg_document.get_data()))
+    ctx.set_inner_html(&svg_document.get_data());	
 }
 
 fn app(name: &str) -> Result<(), JsValue> {
     let document = web_sys::window().unwrap().document().unwrap();
-    let body = document.body().expect("Could not access document.body");
     let editor = document
         .get_element_by_id(name)
         .unwrap()
@@ -39,7 +37,7 @@ fn app(name: &str) -> Result<(), JsValue> {
         .create_element("div")
         .unwrap()
         .dyn_into::<web_sys::HtmlElement>()?;
-    editor.append_child(&context);
+    let _ = editor.append_child(&context);
 
     let m1: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let mi = m1.inverse().unwrap();
@@ -50,7 +48,7 @@ fn app(name: &str) -> Result<(), JsValue> {
     let context = Rc::new(context);
     let pressed = Rc::new(Cell::new(false));
 
-    draw(&context, 400, 400, &figure.borrow_mut())?;
+    draw(&context, 400, 400, &figure.borrow_mut());
 
     {
         let context = context.clone();
@@ -67,7 +65,7 @@ fn app(name: &str) -> Result<(), JsValue> {
                 _ => match f.hitline(p, 0.05) {
                     Some(h) => {
                         f.insert(h, p);
-                        draw(&context, 400, 400, &f).unwrap();
+                        draw(&context, 400, 400, &f);
                         Some(PointIndexPath {
                             line_index: h.line_index,
                             point_index: h.point_index + 1,
@@ -99,7 +97,7 @@ fn app(name: &str) -> Result<(), JsValue> {
 
                 if let Some(h) = selected_point_index_cloned.get() {
                     f.update(h, p);
-                    draw(&context, 400, 400, &f).unwrap();
+                    draw(&context, 400, 400, &f);
                 }
             }
         }) as Box<dyn FnMut(_)>);
@@ -126,7 +124,7 @@ fn app(name: &str) -> Result<(), JsValue> {
             } else if event.key() == "2" {
                 f.load(TessellationFigure::triangle());
             }
-            draw(&context, 400, 400, &f).unwrap();
+            draw(&context, 400, 400, &f);
         }) as Box<dyn FnMut(_)>);
         editor.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
         closure.forget();
