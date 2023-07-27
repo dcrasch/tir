@@ -15,6 +15,7 @@ name="tessellations"
 [dependencies]
 raqote = { version="0.8.2", default-features = false, features=["png"] }
 svg = "0.13"
+lyon = "1.0"
 serde = { version="1.0.104", features = ["derive"] }
 euclid = "0.22" ##must be same version as raqote
 
