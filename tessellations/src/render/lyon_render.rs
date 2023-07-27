@@ -23,7 +23,8 @@ impl Compose for LyonBackend {
             points: &points,
             closed: true,
         };
-       
+        
+        let mut builder = Path::builder();
         rounded_polygon::add_rounded_polygon(&mut builder, figure_polygon, 0.2, NO_ATTRIBUTES);
         let figure_path = builder.build();
         Some(figure_path)

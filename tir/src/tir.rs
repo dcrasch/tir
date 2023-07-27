@@ -48,7 +48,7 @@ fn main() -> Result<(), Error> {
         if let Event::RedrawRequested(_) = event {
             let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
             for (dst, &src) in pixels
-                .get_frame()
+                .frame_mut()
                 .chunks_exact_mut(4)
                 .zip(image.get_data().iter())
             {
@@ -66,7 +66,7 @@ fn main() -> Result<(), Error> {
         if input.update(&event) {
             if input.key_pressed(VirtualKeyCode::Escape)
                 || input.key_pressed(VirtualKeyCode::Q)
-                || input.quit()
+                || input.close_requested()
             {
                 *control_flow = ControlFlow::Exit;
             }
