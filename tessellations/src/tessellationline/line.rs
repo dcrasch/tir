@@ -22,17 +22,6 @@ pub struct PointDef {
     x: f32,
     y: f32,
 }
-impl Serialize for Point {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: Serializer,
-    {
-        let mut s = serializer.serialize_struct("Point", 2)?;
-        s.serialize_field("x", &self.x)?;
-        s.serialize_field("y", &self.y)?;
-        s.end()
-    }
-}
 
 fn points_serialize<S>(v: &[Point], s: S) -> Result<S::Ok, S::Error>
 where
