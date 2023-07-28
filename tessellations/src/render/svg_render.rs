@@ -28,13 +28,7 @@ impl Compose for SVGBackend {
         let points = figure
             .points()
             .windows(2)
-            .filter_map(|l| {
-                if l[0] != l[1] {
-                    Some(l[0])
-                } else {
-                    None
-                }
-            })
+            .filter_map(|l| if l[0] != l[1] { Some(l[0]) } else { None })
             .collect::<Vec<Point>>();
         let p1 = points[0];
 

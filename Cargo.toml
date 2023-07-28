@@ -2,6 +2,7 @@
 members = [
 	"tir",
 	"tir-web",
+	"tir-wgpu",
 	"tessellations"
 	]
 resolver="2"

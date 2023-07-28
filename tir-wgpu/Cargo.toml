@@ -1,0 +1,24 @@
+[package]
+name = "tir-wgpu"
+version = "0.1.0"
+authors = ["David Rasch"]
+license= "GPL-3.0"
+edition = "2021"
+repository = "https://github.com/dcrasch/tir"
+
+[[bin]]
+name="tir-wgpu"
+path="src/tir-wgpu.rs"
+
+[dependencies]
+tessellations = { path = "../tessellations" }
+serde_json = "1.0"
+euclid = "0.22"
+
+winit = "0.28.6"
+lyon = "1.0"
+env_logger = "0.9.0"
+wgpu = "0.17.0"
+futures = "0.3.5"
+bytemuck = "1.13"
+
