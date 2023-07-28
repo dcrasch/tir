@@ -51,7 +51,7 @@ impl Builder for LyonBackend {
     ) -> Vec<(f32, f32, f32, f32, f32, f32)> {
         let mut res: Vec<(f32, f32, f32, f32, f32, f32)> = Vec::new();
         let mut row = 0;
-        let g = plane.grid(figure, 800.0, 800.0, 70.);
+        let g = plane.grid(figure, 400.0, 400.0, 70.);
         let mut c = 0;
         let colors = vec![
             (0xf6, 0xf4, 0xeb),
@@ -79,8 +79,8 @@ impl Builder for LyonBackend {
                     let p = m.transform_point(point(0.0, 0.0));
                     let cc = colors[(c % 4) as usize];
                     res.push((
-                        p.x - 400.0,
-                        p.y - 400.0,
+                        p.x-200.0, 
+                        p.y-100.0,
                         cc.0 as f32 / 256.0,
                         cc.1 as f32 / 256.0,
                         cc.2 as f32 / 256.0,

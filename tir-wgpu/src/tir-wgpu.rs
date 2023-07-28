@@ -22,7 +22,7 @@ use tessellations::tessellationline::PointIndexPath;
 
 //use log;
 
-const PRIM_BUFFER_LEN: usize = 1256;
+const PRIM_BUFFER_LEN: usize = 1356;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -122,7 +122,7 @@ fn main() {
     println!("  a/z: increase/decrease the stroke width");
 
     // add tessellation square
-    let mut f = TessellationFigure::square();
+    let mut f = TessellationFigure::triangle();
     let plane = TessellationPlane {};
     let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(0.0, 0.0));
 
@@ -785,10 +785,6 @@ fn update_inputs(
                         .as_bytes(),
                 )
                 .expect("file error");
-                println!(
-                    "writed: {}",
-                    serde_json::to_string(figure).expect("json error")
-                );
             }
             VirtualKeyCode::L => {
                 *figure = serde_json::from_str(
@@ -796,11 +792,7 @@ fn update_inputs(
                         .expect("file error")
                         .as_str(),
                 )
-                .expect("json error"); //TODO set matrix
-                println!(
-                    "loaded: {}",
-                    serde_json::to_string(figure).expect("json error")
-                );
+                .expect("json error");
                 window.request_redraw();
             }
             VirtualKeyCode::W => {
