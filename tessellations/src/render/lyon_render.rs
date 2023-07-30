@@ -3,6 +3,7 @@ use euclid::Angle;
 use lyon::algorithms::rounded_polygon;
 use lyon::math::{point, Transform};
 use lyon::path::{Path, Polygon, NO_ATTRIBUTES};
+use palette::Srgb;
 
 #[derive(Clone, Copy)]
 pub struct LyonBackend;
@@ -15,6 +16,7 @@ pub trait Builder {
         plane: &TessellationPlane,
         figure: &TessellationFigure,
         m: &Transform,
+        colors: &[Srgb]
     ) -> Vec<(f32, f32, f32, f32, f32, f32)>;
 }
 
@@ -48,17 +50,12 @@ impl Builder for LyonBackend {
         plane: &TessellationPlane,
         figure: &TessellationFigure,
         m: &Transform,
+        palette : &[Srgb]
     ) -> Vec<(f32, f32, f32, f32, f32, f32)> {
         let mut res: Vec<(f32, f32, f32, f32, f32, f32)> = Vec::new();
         let mut row = 0;
-        let g = plane.grid(figure, 400.0, 400.0, 70.);
+        let g = plane.grid(figure, 800.0, 800.0, 70.);
         let mut c = 0;
-        let colors = vec![
-            (0xf6, 0xf4, 0xeb),
-            (0x91, 0xc8, 0xe4),
-            (0x74, 0xbc, 0xc2),
-            (0x46, 0x82, 0xa9),
-        ];
         for rotdiv in 1..=figure.rotdiv {
             let angle = Angle::degrees(360.0 * (rotdiv as f32) / (figure.rotdiv as f32));
 
@@ -77,13 +74,13 @@ impl Builder for LyonBackend {
                     let m = Transform::scale(70.0, 70.0)
                         .then_translate(euclid::vec2(gridpoint.x, gridpoint.y));
                     let p = m.transform_point(point(0.0, 0.0));
-                    let cc = colors[(c % 4) as usize];
+                    let cc = palette[(c % 4) as usize];
                     res.push((
-                        p.x-200.0, 
-                        p.y-100.0,
-                        cc.0 as f32 / 256.0,
-                        cc.1 as f32 / 256.0,
-                        cc.2 as f32 / 256.0,
+                        p.x-400.0+35.0, 
+                        p.y-400.0+35.0,
+                        cc.red,
+                        cc.green,
+                        cc.blue,
                         angle.radians,
                     ));
 

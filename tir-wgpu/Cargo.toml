@@ -17,8 +17,10 @@ euclid = "0.22"
 
 winit = "0.28.6"
 lyon = "1.0"
-env_logger = "0.10.0"
-wgpu = "0.17.0"
+env_logger = "0.10"
+wgpu = "0.17"
 futures = "0.3.5"
 bytemuck = "1.13"
+palette = "0.7"
+rand = "0.8"
 

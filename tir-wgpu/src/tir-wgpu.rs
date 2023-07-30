@@ -5,7 +5,8 @@ use lyon::tessellation;
 use lyon::tessellation::geometry_builder::*;
 use lyon::tessellation::{FillOptions, FillTessellator};
 use lyon::tessellation::{StrokeOptions, StrokeTessellator};
-
+use palette::{Hsl, Srgb, FromColor};
+use rand::prelude::*;
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -121,6 +122,8 @@ fn main() {
     println!("  b: toggle drawing the background");
     println!("  a/z: increase/decrease the stroke width");
 
+    let mut palette: Vec<Srgb<f32>> = generate_palette();
+    println!("{:?}",palette);
     // add tessellation square
     let mut f = TessellationFigure::triangle();
     let plane = TessellationPlane {};
@@ -349,7 +352,7 @@ fn main() {
     window.request_redraw();
 
     event_loop.run(move |event, _, control_flow| {
-        if !update_inputs(event, &window, control_flow, &mut scene, &mut f) {
+        if !update_inputs(event, &window, control_flow, &mut scene, &mut f, &mut palette) {
             // keep polling inputs.
             return;
         }
@@ -419,8 +422,8 @@ fn main() {
 
         let lb = Box::new(LyonBackend);
         let path = lb.build(&f, &m).unwrap();
-        let grid = lb.build_plane(&plane, &f, &m);
-
+        let grid = lb.build_plane(&plane, &f, &m, &palette);
+        //println!("{}",grid.len());
         fill_tess
             .tessellate_path(
                 &path,
@@ -627,6 +630,7 @@ fn update_inputs(
     control_flow: &mut ControlFlow,
     scene: &mut SceneParams,
     figure: &mut TessellationFigure,
+    palette : &mut Vec<Srgb<f32>>
 ) -> bool {
     let mpx = (window.inner_size().width as f32) / 2.0;
     let mpy = (window.inner_size().height as f32) / 2.0;
@@ -777,6 +781,11 @@ fn update_inputs(
             VirtualKeyCode::Z => {
                 scene.target_stroke_width *= 0.8;
             }
+            VirtualKeyCode::R => {
+                *palette = generate_palette();
+                window.request_redraw();
+
+            }
             VirtualKeyCode::S => {
                 fs::write(
                     "figure.json",
@@ -844,4 +853,31 @@ fn update_inputs(
     *control_flow = ControlFlow::Poll;
 
     true
+}
+
+fn generate_palette() -> Vec<Srgb<f32>> {
+    let mut rng: ThreadRng = rand::thread_rng();
+
+     // Generate a random base hue
+     let base_hue = rng.gen_range(0..360) as f32;
+     let mut palette = Vec::<Srgb<f32>>::new();
+     // Calculate three analogous hues
+     let hue_shift = 30.0; // You can adjust this value for different analogous colors
+     let analogous_hues = vec![
+         (base_hue + hue_shift) % 360.0,
+         (base_hue + 2.0 * hue_shift) % 360.0,
+         (base_hue + 3.0 * hue_shift) % 360.0,
+     ];
+ 
+     // Convert analogous hues to RGB colors and add to the palette
+     for hue in &analogous_hues {
+         let color  = Hsl::new(*hue, 0.7, 0.6).into_format();
+         palette.push(Srgb::from_color(color));
+     }
+ 
+     // Add a complementary color to the palette
+     let complementary_hue = (base_hue + 180.0) % 360.0;
+     let complementary_color = Hsl::new(complementary_hue, 0.7, 0.6).into_format();
+     palette.push(Srgb::from_color(complementary_color));
+     return palette;
 }
