@@ -16,8 +16,8 @@ pub trait Builder {
         plane: &TessellationPlane,
         figure: &TessellationFigure,
         m: &Transform,
-        colors: &[Srgb]
-    ) -> Vec<(f32, f32, f32, f32, f32, f32)>;
+        colors: &[Srgb],
+    ) -> Vec<OutputPrimitive>;
 }
 
 impl Builder for LyonBackend {
@@ -50,9 +50,9 @@ impl Builder for LyonBackend {
         plane: &TessellationPlane,
         figure: &TessellationFigure,
         m: &Transform,
-        palette : &[Srgb]
-    ) -> Vec<(f32, f32, f32, f32, f32, f32)> {
-        let mut res: Vec<(f32, f32, f32, f32, f32, f32)> = Vec::new();
+        palette: &[Srgb],
+    ) -> Vec<OutputPrimitive> {
+        let mut res: Vec<OutputPrimitive> = Vec::new();
         let mut row = 0;
         let g = plane.grid(figure, 800.0, 800.0, 70.);
         let mut c = 0;
@@ -75,14 +75,15 @@ impl Builder for LyonBackend {
                         .then_translate(euclid::vec2(gridpoint.x, gridpoint.y));
                     let p = m.transform_point(point(0.0, 0.0));
                     let cc = palette[(c % 4) as usize];
-                    res.push((
-                        p.x-400.0+35.0, 
-                        p.y-400.0+35.0,
-                        cc.red,
-                        cc.green,
-                        cc.blue,
-                        angle.radians,
-                    ));
+           
+                    res.push(OutputPrimitive {
+                        x: p.x - 400.0 + 35.0,
+                        y: p.y - 400.0 + 35.0,
+                        r: cc.red,
+                        g: cc.green,
+                        b: cc.blue,
+                        angle: angle.radians,
+                    });
 
                     c += 1;
                 }
@@ -91,6 +92,15 @@ impl Builder for LyonBackend {
         }
         res
     }
+}
+
+pub struct OutputPrimitive {
+    pub x: f32,
+    pub y: f32,
+    pub r: f32,
+    pub g: f32,
+    pub b: f32,
+    pub angle: f32,
 }
 
 #[cfg(test)]
@@ -103,8 +113,6 @@ mod tests {
     fn test_square_shader() {
         let f = TessellationFigure::square();
         let m: Transform = Transform::identity();
-        //Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
-
         let shaders = LyonBackend.build(&f, &m).unwrap();
         assert_eq!(format!("{:?}",shaders),"\" M 0.0 0.2 L 0.0 0.8 Q -2.2143507e-8 0.8828428 0.058578625 0.94142133 Q 0.117157176 0.9999999 0.19999997 0.99999994 L 0.8 1.0 Q 0.8828431 0.9999998 0.94142133 0.94142133 Q 0.9999999 0.88284314 0.99999994 0.79999995 L 1.0 0.2 Q 0.9999998 0.11715724 0.94142133 0.05857864 Q 0.8828426 -8.646711e-9 0.79999995 -1.4901161e-8 L 0.2 0.0 Q 0.117157295 1.852233e-8 0.058578655 0.058578655 Q 7.65882e-9 0.11715731 1.4901161e-8 0.20000003 Z\"")
     }

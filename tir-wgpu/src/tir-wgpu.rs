@@ -5,7 +5,7 @@ use lyon::tessellation;
 use lyon::tessellation::geometry_builder::*;
 use lyon::tessellation::{FillOptions, FillTessellator};
 use lyon::tessellation::{StrokeOptions, StrokeTessellator};
-use palette::{Hsl, Srgb, FromColor};
+use palette::{FromColor, Hsl, Srgb};
 use rand::prelude::*;
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
@@ -73,6 +73,19 @@ impl Primitive {
     };
 }
 
+impl From<&OutputPrimitive> for Primitive {
+    fn from(p: &OutputPrimitive) -> Primitive {
+        Primitive {
+            translate: [p.x, p.y],
+            color: [p.r, p.g, p.b, 1.0],
+            angle: p.angle,
+            scale: 0.7,
+            z_index: 1,
+            ..Primitive::DEFAULT
+        }
+    }
+}
+
 unsafe impl bytemuck::Pod for Primitive {}
 unsafe impl bytemuck::Zeroable for Primitive {}
 
@@ -123,7 +136,7 @@ fn main() {
     println!("  a/z: increase/decrease the stroke width");
 
     let mut palette: Vec<Srgb<f32>> = generate_palette();
-    println!("{:?}",palette);
+    println!("{:?}", palette);
     // add tessellation square
     let mut f = TessellationFigure::triangle();
     let plane = TessellationPlane {};
@@ -352,7 +365,14 @@ fn main() {
     window.request_redraw();
 
     event_loop.run(move |event, _, control_flow| {
-        if !update_inputs(event, &window, control_flow, &mut scene, &mut f, &mut palette) {
+        if !update_inputs(
+            event,
+            &window,
+            control_flow,
+            &mut scene,
+            &mut f,
+            &mut palette,
+        ) {
             // keep polling inputs.
             return;
         }
@@ -459,7 +479,6 @@ fn main() {
             });
         }
 
-        let mut figure_count = 1;
         // Stroke primitive
         cpu_primitives[stroke_prim_id] = Primitive {
             color: [0.0, 0.0, 0.0, 1.0],
@@ -477,19 +496,12 @@ fn main() {
 
         if scene.draw_background {
             // grid stuff
-            for i in 0..grid.len() {
-                let (x, y, r, g, b, a) = grid[i];
-                cpu_primitives[fill_prim_id + i] = Primitive {
-                    translate: [x, y],
-                    angle: a,
-                    scale: 0.7,
-                    color: [r, g, b, 1.0],
-                    z_index: 1,
-                    ..Primitive::DEFAULT
-                };
-                figure_count += 1;
+            for (i, p) in grid.iter().enumerate() {
+                cpu_primitives[fill_prim_id + i] = p.into();
             }
         }
+        let figure_count = 1 + grid.len() as u32;
+
         let vbo = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
             contents: bytemuck::cast_slice(&geometry.vertices),
@@ -630,7 +642,7 @@ fn update_inputs(
     control_flow: &mut ControlFlow,
     scene: &mut SceneParams,
     figure: &mut TessellationFigure,
-    palette : &mut Vec<Srgb<f32>>
+    palette: &mut Vec<Srgb<f32>>,
 ) -> bool {
     let mpx = (window.inner_size().width as f32) / 2.0;
     let mpy = (window.inner_size().height as f32) / 2.0;
@@ -784,7 +796,6 @@ fn update_inputs(
             VirtualKeyCode::R => {
                 *palette = generate_palette();
                 window.request_redraw();
-
             }
             VirtualKeyCode::S => {
                 fs::write(
@@ -858,26 +869,26 @@ fn update_inputs(
 fn generate_palette() -> Vec<Srgb<f32>> {
     let mut rng: ThreadRng = rand::thread_rng();
 
-     // Generate a random base hue
-     let base_hue = rng.gen_range(0..360) as f32;
-     let mut palette = Vec::<Srgb<f32>>::new();
-     // Calculate three analogous hues
-     let hue_shift = 30.0; // You can adjust this value for different analogous colors
-     let analogous_hues = vec![
-         (base_hue + hue_shift) % 360.0,
-         (base_hue + 2.0 * hue_shift) % 360.0,
-         (base_hue + 3.0 * hue_shift) % 360.0,
-     ];
- 
-     // Convert analogous hues to RGB colors and add to the palette
-     for hue in &analogous_hues {
-         let color  = Hsl::new(*hue, 0.7, 0.6).into_format();
-         palette.push(Srgb::from_color(color));
-     }
- 
-     // Add a complementary color to the palette
-     let complementary_hue = (base_hue + 180.0) % 360.0;
-     let complementary_color = Hsl::new(complementary_hue, 0.7, 0.6).into_format();
-     palette.push(Srgb::from_color(complementary_color));
-     return palette;
+    // Generate a random base hue
+    let base_hue = rng.gen_range(0..360) as f32;
+    let mut palette = Vec::<Srgb<f32>>::new();
+    // Calculate three analogous hues
+    let hue_shift = 30.0; // You can adjust this value for different analogous colors
+    let analogous_hues = vec![
+        (base_hue + hue_shift) % 360.0,
+        (base_hue + 2.0 * hue_shift) % 360.0,
+        (base_hue + 3.0 * hue_shift) % 360.0,
+    ];
+
+    // Convert analogous hues to RGB colors and add to the palette
+    for hue in &analogous_hues {
+        let color = Hsl::new(*hue, 0.7, 0.6).into_format();
+        palette.push(Srgb::from_color(color));
+    }
+
+    // Add a complementary color to the palette
+    let complementary_hue = (base_hue + 180.0) % 360.0;
+    let complementary_color = Hsl::new(complementary_hue, 0.7, 0.6).into_format();
+    palette.push(Srgb::from_color(complementary_color));
+    return palette;
 }
