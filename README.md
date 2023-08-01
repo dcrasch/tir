@@ -24,13 +24,15 @@ Live view : https://dcrasch.github.io/tir/
 ## Links
 
 * https://github.com/isohedral/tactile-js
+* https://github.com/DBraun/tactile-python
 * https://github.com/jrmuizel/raqote
-* https://github.com/emoon/rust_minifb
-* http://www.rustinaction.com/
+* https://github.com/nical/lyon
 * https://github.com/gfx-rs/wgpu
 * https://github.com/flutter-rs/flutter-rs
 * https://github.com/brickpop/flutter-rust-ffi
 * https://thlorenz.com/rid-site/docs/getting-started/introduction/
+* https://crates.io/crates/tactile
+* https://crates.io/crates/tiling
 
 ## License
 

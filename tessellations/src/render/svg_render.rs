@@ -71,7 +71,7 @@ impl Compose for SVGBackend {
         m: &Transform,
     ) -> Option<SVG> {
         let mut row = 0;
-        let g = plane.grid(figure, 400.0, 400.0, 70.);
+        let g = plane.grid(figure, 12.0, 12.0);
         let mut c = 0;
         let mut document = Document::new().set("viewBox", (0, 0, 400, 400));
         let colors = vec!["red", "green", "blue", "black"];
@@ -114,7 +114,7 @@ impl Compose for SVGBackend {
                     }
                     let m = Transform::rotation(angle)
                         .then_scale(70.0, 70.0)
-                        .then_translate(euclid::vec2(gridpoint.x, gridpoint.y));
+                        .then_translate(euclid::vec2(gridpoint.x * 70.0, gridpoint.y * 70.0));
 
                     let tile_figure = Use::new()
                         .set("href", "#figure")

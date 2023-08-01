@@ -5,22 +5,16 @@ pub struct TessellationPlane {}
 
 impl TessellationPlane {
     /// for a figure and view and scale generate a grid of grid points
-    pub fn grid(
-        &self,
-        figure: &TessellationFigure,
-        width: f32,
-        height: f32,
-        dscale: f32,
-    ) -> Vec<Vec<Point>> {
+    pub fn grid(&self, figure: &TessellationFigure, width: f32, height: f32) -> Vec<Vec<Point>> {
         let mut grid = Vec::<Vec<Point>>::new();
-        let igx = dscale * figure.gridincx;
-        let igy = dscale * figure.gridincy;
-        let shx = dscale * figure.shiftx;
-        let shy = dscale * figure.shifty;
-        let mut minx: f32 = -igx * 2.0;
-        let mut miny: f32 = -igy * 2.0;
-        let maxx: f32 = width + igx;
-        let mut maxy: f32 = height + igy;
+        let igx = figure.gridincx;
+        let igy = figure.gridincy;
+        let shx = figure.shiftx;
+        let shy = figure.shifty;
+        let mut minx: f32 = -igx * 2.0 - width / 2.0;
+        let mut miny: f32 = -igy * 2.0 - height / 2.0;
+        let maxx: f32 = width / 2.0 + igx;
+        let mut maxy: f32 = height / 2.0 + igy;
         let mut sx;
         let mut sy;
         while miny <= maxy {

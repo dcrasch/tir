@@ -7,58 +7,7 @@ mod tests {
     fn test_grid_square() {
         let f = TessellationFigure::square();
         let p = TessellationPlane {};
-        assert_eq!(
-            p.grid(&f, 2.0, 2.0, 1.0),
-            vec![
-                vec![
-                    Point::new(-1.0, -2.0),
-                    Point::new(0.0, -2.0),
-                    Point::new(1.0, -2.0),
-                    Point::new(2.0, -2.0),
-                    Point::new(3.0, -2.0),
-                    Point::new(4.0, -2.0)
-                ],
-                vec![
-                    Point::new(-1.0, -1.0),
-                    Point::new(0.0, -1.0),
-                    Point::new(1.0, -1.0),
-                    Point::new(2.0, -1.0),
-                    Point::new(3.0, -1.0),
-                    Point::new(4.0, -1.0)
-                ],
-                vec![
-                    Point::new(-1.0, 0.0),
-                    Point::new(0.0, 0.0),
-                    Point::new(1.0, 0.0),
-                    Point::new(2.0, 0.0),
-                    Point::new(3.0, 0.0),
-                    Point::new(4.0, 0.0)
-                ],
-                vec![
-                    Point::new(-1.0, 1.0),
-                    Point::new(0.0, 1.0),
-                    Point::new(1.0, 1.0),
-                    Point::new(2.0, 1.0),
-                    Point::new(3.0, 1.0),
-                    Point::new(4.0, 1.0)
-                ],
-                vec![
-                    Point::new(-1.0, 2.0),
-                    Point::new(0.0, 2.0),
-                    Point::new(1.0, 2.0),
-                    Point::new(2.0, 2.0),
-                    Point::new(3.0, 2.0),
-                    Point::new(4.0, 2.0)
-                ],
-                vec![
-                    Point::new(-1.0, 3.0),
-                    Point::new(0.0, 3.0),
-                    Point::new(1.0, 3.0),
-                    Point::new(2.0, 3.0),
-                    Point::new(3.0, 3.0),
-                    Point::new(4.0, 3.0)
-                ]
-            ]
-        );
+        let expected = "[[(-1.5, -2.5), (-0.5, -2.5), (0.5, -2.5), (1.5, -2.5), (2.5, -2.5)], [(-1.5, -1.5), (-0.5, -1.5), (0.5, -1.5), (1.5, -1.5), (2.5, -1.5)], [(-1.5, -0.5), (-0.5, -0.5), (0.5, -0.5), (1.5, -0.5), (2.5, -0.5)], [(-1.5, 0.5), (-0.5, 0.5), (0.5, 0.5), (1.5, 0.5), (2.5, 0.5)], [(-1.5, 1.5), (-0.5, 1.5), (0.5, 1.5), (1.5, 1.5), (2.5, 1.5)]]";
+        assert_eq!(format!("{:?}", p.grid(&f, 1.0, 1.0)), expected);
     }
 }

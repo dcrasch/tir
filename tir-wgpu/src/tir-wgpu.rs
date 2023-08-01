@@ -73,19 +73,6 @@ impl Primitive {
     };
 }
 
-impl From<&OutputPrimitive> for Primitive {
-    fn from(p: &OutputPrimitive) -> Primitive {
-        Primitive {
-            translate: [p.x, p.y],
-            color: [p.r, p.g, p.b, 1.0],
-            angle: p.angle,
-            scale: 0.7,
-            z_index: 1,
-            ..Primitive::DEFAULT
-        }
-    }
-}
-
 unsafe impl bytemuck::Pod for Primitive {}
 unsafe impl bytemuck::Zeroable for Primitive {}
 
@@ -441,8 +428,8 @@ fn main() {
         let mut stroke_tess = StrokeTessellator::new();
 
         let lb = Box::new(LyonBackend);
-        let path = lb.build(&f, &m).unwrap();
-        let grid = lb.build_plane(&plane, &f, &m, &palette);
+        let path = lb.build(&f).unwrap();
+        let grid = lb.build_plane(&plane, &f, &palette);
         //println!("{}",grid.len());
         fill_tess
             .tessellate_path(
@@ -484,6 +471,7 @@ fn main() {
             color: [0.0, 0.0, 0.0, 1.0],
             z_index: 1,
             width: scene.stroke_width,
+            scale: 100.0,
             ..Primitive::DEFAULT
         };
 
@@ -497,7 +485,14 @@ fn main() {
         if scene.draw_background {
             // grid stuff
             for (i, p) in grid.iter().enumerate() {
-                cpu_primitives[fill_prim_id + i] = p.into();
+                cpu_primitives[fill_prim_id + i] = Primitive {
+                    color: [p.r, p.g, p.b, 1.0],
+                    translate: [p.x * 100.0, p.y * 100.0],
+                    z_index: 1,
+                    angle: p.angle,
+                    scale: 100.0,
+                    ..Primitive::DEFAULT
+                };
             }
         }
         let figure_count = 1 + grid.len() as u32;

@@ -1,11 +1,11 @@
 [package]
 name = "tessellations"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["David Rasch"]
 license= "GPL-3.0"
 edition = "2021"
 repository = "https://github.com/dcrasch/tir"
-keywords = ["tessellation", "graphics"]
+keywords = ["tessellation", "graphics","tiling"]
 description = "Library to create and draw periodic tilings of the plane."
 documentation = "https://docs.rs/tessellations/"
 
