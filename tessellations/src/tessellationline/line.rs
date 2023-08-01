@@ -2,7 +2,7 @@ use euclid::vec2;
 use euclid::Angle;
 
 use serde::de::Deserializer;
-use serde::ser::{SerializeSeq, Serializer};
+use serde::ser::{SerializeSeq, SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
 
 pub type Point = euclid::default::Point2D<f32>;
@@ -44,8 +44,36 @@ where
         .collect())
 }
 
+/*
+pub m11: T, pub m12: T,
+pub m21: T, pub m22: T,
+pub m31: T, pub m32: T,
+*/
+
+fn transform_serialize<S>(v: &Transform, s: S) -> Result<S::Ok, S::Error>
+where
+    S: Serializer,
+{
+    let mut ts = s.serialize_tuple(6)?;
+    ts.serialize_element(&v.m11)?;
+    ts.serialize_element(&v.m12)?;
+    ts.serialize_element(&v.m21)?;
+    ts.serialize_element(&v.m22)?;
+    ts.serialize_element(&v.m31)?;
+    ts.serialize_element(&v.m32)?;
+    ts.end()
+}
+
+fn transform_deserialize<'de, D>(d: D) -> Result<Transform, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    let v = <(f32, f32, f32, f32, f32, f32)>::deserialize(d)?;
+    Ok(Transform::new(v.0, v.1, v.2, v.3, v.4, v.5))
+}
+
 /// Type to store the points on a line and the transform to the corresponding line
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct TessellationLine {
     #[serde(
         serialize_with = "points_serialize",
@@ -53,11 +81,18 @@ pub struct TessellationLine {
     )]
     points: Vec<Point>,
 
-    #[serde(skip)]
+    #[serde(
+        serialize_with = "transform_serialize",
+        deserialize_with = "transform_deserialize"
+    )]
     transform: Transform,
 
-    #[serde(skip)]
+    #[serde(
+        serialize_with = "transform_serialize",
+        deserialize_with = "transform_deserialize"
+    )]
     ci: Transform,
+
     angle: f32,
     tx: f32,
     ty: f32,
@@ -322,7 +357,17 @@ mod tests {
     }
 
     #[test]
-    fn test_transform() {
-        // let transform = Transform::create_translation(tx,ty).post_rotate(a);
+    fn test_transform_serialize() {
+        let line = TessellationLine::default();
+        let json = "{\"points\":[],\"transform\":[1.0,0.0,0.0,1.0,0.0,0.0],\"ci\":[1.0,0.0,0.0,1.0,0.0,0.0],\"angle\":0.0,\"tx\":0.0,\"ty\":0.0}";
+        assert_eq!(serde_json::to_string(&line).unwrap(), json);
+    }
+
+    #[test]
+    fn test_transform_deserialize() {
+        let line = TessellationLine::default();
+        let json = "{\"points\":[],\"transform\":[1.0,0.0,0.0,1.0,0.0,0.0],\"ci\":[1.0,0.0,0.0,1.0,0.0,0.0],\"angle\":0.0,\"tx\":0.0,\"ty\":0.0}";
+        let res: TessellationLine = serde_json::from_str(json).unwrap();
+        assert_eq!(res, line);
     }
 }

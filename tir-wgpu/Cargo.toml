@@ -1,20 +1,26 @@
 [package]
-name = "tir"
-version = "0.2.0"
+name = "tir-wgpu"
+version = "0.1.0"
 authors = ["David Rasch"]
 license= "GPL-3.0"
 edition = "2021"
 repository = "https://github.com/dcrasch/tir"
 
 [[bin]]
-name="tir"
-path="src/tir.rs"
+name="tir-wgpu"
+path="src/tir-wgpu.rs"
 
 [dependencies]
-winit = "0.28"
-winit_input_helper = "0.14"
-pixels = "0.13"
 tessellations = { path = "../tessellations" }
 serde_json = "1.0"
-raqote = { version="0.8.2", default-features = false, features=["png"]}
 euclid = "0.22"
+
+winit = "0.28.6"
+lyon = "1.0"
+env_logger = "0.10"
+wgpu = "0.17"
+futures = "0.3.5"
+bytemuck = "1.13"
+palette = "0.7"
+rand = "0.8"
+

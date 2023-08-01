@@ -14,17 +14,12 @@ use tessellations::render::*;
 use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
 use tessellations::tessellationline::PointIndexPath;
 
-pub fn draw(
-    ctx: &web_sys::HtmlElement,
-    _: u32,
-    _: u32,
-    f: &TessellationFigure,
-) {
+pub fn draw(ctx: &web_sys::HtmlElement, _: u32, _: u32, f: &TessellationFigure) {
     let backend = Box::new(SVGBackend);
     let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let p = TessellationPlane {};
     let svg_document = backend.compose_plane(&p, f, &m).unwrap();
-    ctx.set_inner_html(&svg_document.get_data());	
+    ctx.set_inner_html(&svg_document.get_data());
 }
 
 fn app(name: &str) -> Result<(), JsValue> {

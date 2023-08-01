@@ -140,7 +140,7 @@ impl Render for Backend {
             a: 0xff,
         });
         let mut row = 0;
-        let g = plane.grid(figure, 400.0, 400.0, 70.);
+        let g = plane.grid(figure, 12.0, 12.0);
         let mut c = 0;
 
         for rotdiv in 1..=figure.rotdiv {
@@ -160,7 +160,7 @@ impl Render for Backend {
 
                     let m = Transform::rotation(angle)
                         .then_scale(70.0, 70.0)
-                        .then_translate(euclid::vec2(gridpoint.x, gridpoint.y));
+                        .then_translate(euclid::vec2(gridpoint.x * 70.0, gridpoint.y * 70.0));
                     let points = figure
                         .points()
                         .windows(2)

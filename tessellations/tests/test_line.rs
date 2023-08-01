@@ -111,11 +111,8 @@ mod tests {
         l1.append(Point::new(0.0, 0.0));
         l1.append(Point::new(0.0, 0.5));
         l1.append(Point::new(0.0, 1.0));
-
-        assert_eq!(
-        serde_json::to_string(&l1).expect(""),
-        "{\"points\":[{\"x\":0.0,\"y\":0.0},{\"x\":0.0,\"y\":0.5},{\"x\":0.0,\"y\":1.0}],\"angle\":0.0,\"tx\":1.0,\"ty\":0.0}"
-        );
+        let j = "{\"points\":[{\"x\":0.0,\"y\":0.0},{\"x\":0.0,\"y\":0.5},{\"x\":0.0,\"y\":1.0}],\"transform\":[1.0,0.0,0.0,1.0,1.0,0.0],\"ci\":[1.0,0.0,0.0,1.0,-1.0,0.0],\"angle\":0.0,\"tx\":1.0,\"ty\":0.0}";
+        assert_eq!(serde_json::to_string(&l1).expect(""), j);
     }
 
     #[test]
@@ -125,9 +122,9 @@ mod tests {
         l1.append(Point::new(0.0, 0.5));
         l1.append(Point::new(0.0, 1.0));
 
-        let j : &str = "{\"points\":[{\"x\":0.0,\"y\":0.0},{\"x\":0.0,\"y\":0.5},{\"x\":0.0,\"y\":1.0}],\"angle\":0.0,\"tx\":1.0,\"ty\":0.0}";
+        let j = "{\"points\":[{\"x\":0.0,\"y\":0.0},{\"x\":0.0,\"y\":0.5},{\"x\":0.0,\"y\":1.0}],\"transform\":[1.0,0.0,0.0,1.0,1.0,0.0],\"ci\":[1.0,0.0,0.0,1.0,-1.0,0.0],\"angle\":0.0,\"tx\":1.0,\"ty\":0.0}";
+
         let l2 = serde_json::from_str::<TessellationLine>(j).expect("parse error");
-        // TODO build eq?
-        assert_eq!(format!("{:?}",l2),"TessellationLine { points: [(0.0, 0.0), (0.0, 0.5), (0.0, 1.0)], transform: [I], ci: [I], angle: 0.0, tx: 1.0, ty: 0.0 }");
+        assert_eq!(l1, l2);
     }
 }

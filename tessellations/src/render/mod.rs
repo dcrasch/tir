@@ -1,6 +1,9 @@
+mod lyon_render;
 mod raqote_render;
 mod svg_render;
-
+pub use lyon_render::Builder;
+pub use lyon_render::LyonBackend;
+pub use lyon_render::OutputPrimitive;
 pub use raqote_render::Backend;
 pub use raqote_render::OutputImage;
 pub use raqote_render::Render;
