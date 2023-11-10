@@ -1,8 +1,8 @@
 use crate::tessellationfigure::{TessellationFigure, TessellationPlane};
 use euclid::Angle;
-use lyon::algorithms::rounded_polygon;
-use lyon::math::{point, Transform};
-use lyon::path::{Path, Polygon, NO_ATTRIBUTES};
+//use lyon::algorithms::rounded_polygon;
+use lyon::math::{point}; //, Transform};
+use lyon::path::{Path, Polygon};//, NO_ATTRIBUTES};
 use palette::Srgb;
 
 #[derive(Clone, Copy)]
