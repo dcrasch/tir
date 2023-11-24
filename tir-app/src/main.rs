@@ -4,8 +4,7 @@
 )]
 
 use freya::prelude::*;
-pub mod components;
-use crate::components::tessellationeditor::TessellationEditor;
+use tir_app::components::tessellationeditor::TessellationEditor;
 
 fn main() {
     launch(app);
