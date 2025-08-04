@@ -123,7 +123,7 @@ fn main() {
     println!("  a/z: increase/decrease the stroke width");
 
     let mut palette: Vec<Srgb<f32>> = generate_palette();
-    println!("{:?}", palette);
+    eprintln!("{:?}", palette);
     // add tessellation square
     let mut f = TessellationFigure::triangle();
     let plane = TessellationPlane {};
@@ -178,7 +178,7 @@ fn main() {
         &wgpu::DeviceDescriptor {
             label: None,
             features: wgpu::Features::default(),
-            limits: wgpu::Limits::default(),
+            limits: wgpu::Limits::downlevel_defaults(),
         },
         None,
     ))
