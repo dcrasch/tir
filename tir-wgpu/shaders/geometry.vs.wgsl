@@ -20,7 +20,7 @@ struct Primitives {
 };
 
 @group(0) @binding(0) var<uniform> globals: Globals;
-@group(0) @binding(1) var<uniform> u_primitives: Primitives;
+@group(0) @binding(1) var<storage,read> u_primitives: Primitives;
 
 struct VertexOutput {
     @location(0) v_color: vec4<f32>,

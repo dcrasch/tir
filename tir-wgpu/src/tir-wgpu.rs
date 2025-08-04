@@ -127,7 +127,7 @@ fn main() {
     // add tessellation square
     let mut f = TessellationFigure::triangle();
     let plane = TessellationPlane {};
-    let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(0.0, 0.0));
+    //let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(0.0, 0.0));
 
     // Number of samples for anti-aliasing
     // Set to 1 to disable
@@ -184,22 +184,23 @@ fn main() {
     ))
     .unwrap();
 
-    let prim_buffer_byte_size = (PRIM_BUFFER_LEN * std::mem::size_of::<Primitive>()) as u64;
     let globals_buffer_byte_size = std::mem::size_of::<Globals>() as u64;
-
-    let prims_ubo = device.create_buffer(&wgpu::BufferDescriptor {
-        label: Some("Prims ubo"),
-        size: prim_buffer_byte_size,
-        usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
-        mapped_at_creation: false,
-    });
-
     let globals_ubo = device.create_buffer(&wgpu::BufferDescriptor {
         label: Some("Globals ubo"),
         size: globals_buffer_byte_size,
         usage: wgpu::BufferUsages::UNIFORM | wgpu::BufferUsages::COPY_DST,
         mapped_at_creation: false,
     });
+
+    let prim_buffer_byte_size = (PRIM_BUFFER_LEN * std::mem::size_of::<Primitive>()) as u64;
+    let prims_sbo = device.create_buffer(&wgpu::BufferDescriptor {
+        label: Some("Prims sbo"),
+        size: prim_buffer_byte_size,
+        usage: wgpu::BufferUsages::STORAGE | wgpu::BufferUsages::COPY_DST,
+        mapped_at_creation: false,
+    });
+
+
 
     let vs_module = &device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Geometry vs"),
@@ -227,7 +228,7 @@ fn main() {
                 binding: 1,
                 visibility: wgpu::ShaderStages::VERTEX,
                 ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Uniform,
+                    ty: wgpu::BufferBindingType::Storage {read_only:true},
                     has_dynamic_offset: false,
                     min_binding_size: wgpu::BufferSize::new(prim_buffer_byte_size),
                 },
@@ -245,7 +246,7 @@ fn main() {
             },
             wgpu::BindGroupEntry {
                 binding: 1,
-                resource: wgpu::BindingResource::Buffer(prims_ubo.as_entire_buffer_binding()),
+                resource: wgpu::BindingResource::Buffer(prims_sbo.as_entire_buffer_binding()),
             },
         ],
     });
@@ -487,7 +488,7 @@ fn main() {
             for (i, p) in grid.iter().enumerate() {
                 cpu_primitives[fill_prim_id + i] = Primitive {
                     color: [p.r, p.g, p.b, 1.0],
-                    translate: [p.x * 100.0, p.y * 100.0],
+                    translate: [p.x * 100.0 -100.0, p.y * 100.0],
                     z_index: 1,
                     angle: p.angle,
                     scale: 100.0,
@@ -525,7 +526,7 @@ fn main() {
             }]),
         );
 
-        queue.write_buffer(&prims_ubo, 0, bytemuck::cast_slice(&cpu_primitives));
+        queue.write_buffer(&prims_sbo, 0, bytemuck::cast_slice(&cpu_primitives));
 
         {
             // A resolve target is only supported if the attachment actually uses anti-aliasing

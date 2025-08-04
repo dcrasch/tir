@@ -45,7 +45,7 @@ impl Builder for LyonBackend {
     ) -> Vec<OutputPrimitive> {
         let mut res: Vec<OutputPrimitive> = Vec::new();
         let mut row = 0;
-        let g = plane.grid(figure, 3.0, 3.0);
+        let g = plane.grid(figure, 16.0, 16.0);
         let mut c = 0;
         for rotdiv in 1..=figure.rotdiv {
             let angle = Angle::degrees(360.0 * (rotdiv as f32) / (figure.rotdiv as f32));
@@ -64,7 +64,7 @@ impl Builder for LyonBackend {
 
                     let cc = palette[(c % 4) as usize];
                     res.push(OutputPrimitive {
-                        x: gridpoint.x,
+                        x: gridpoint.x-4.0,
                         y: gridpoint.y,
                         r: cc.red,
                         g: cc.green,
