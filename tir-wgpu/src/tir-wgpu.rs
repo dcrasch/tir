@@ -178,7 +178,8 @@ fn main() {
         &wgpu::DeviceDescriptor {
             label: None,
             features: wgpu::Features::default(),
-            limits: wgpu::Limits::downlevel_defaults(),
+            //limits: wgpu::Limits::downlevel_defaults(), ## for raspberry pi
+            limits: wgpu::Limits::default(),
         },
         None,
     ))
