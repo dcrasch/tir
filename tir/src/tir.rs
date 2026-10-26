@@ -9,11 +9,9 @@ use winit::{
 };
 use winit_input_helper::WinitInputHelper;
 
-use raqote::*;
-
 use tessellations::render::*;
 use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
-use tessellations::tessellationline::PointIndexPath;
+use tessellations::tessellationline::{Point, PointIndexPath, Transform};
 
 const WIDTH: u32 = 400;
 const HEIGHT: u32 = 400;
@@ -47,16 +45,7 @@ fn main() -> Result<(), Error> {
     event_loop.run(move |event, _, control_flow| {
         if let Event::RedrawRequested(_) = event {
             let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
-            for (dst, &src) in pixels
-                .frame_mut()
-                .chunks_exact_mut(4)
-                .zip(image.get_data().iter())
-            {
-                dst[0] = (src >> 16) as u8;
-                dst[1] = (src >> 8) as u8;
-                dst[2] = src as u8;
-                dst[3] = (src >> 24) as u8;
-            }
+            pixels.frame_mut().copy_from_slice(image.get_data());
 
             if pixels.render().is_err() {
                 *control_flow = ControlFlow::Exit;

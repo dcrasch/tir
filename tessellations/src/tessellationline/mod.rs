@@ -1,3 +1,3 @@
 mod line;
 
-pub use line::{Point, PointIndexPath, TessellationLine};
+pub use line::{Point, PointIndexPath, TessellationLine, Transform};

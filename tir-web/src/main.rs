@@ -9,10 +9,9 @@ use std::rc::Rc;
 use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
-use raqote::*;
 use tessellations::render::*;
 use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
-use tessellations::tessellationline::PointIndexPath;
+use tessellations::tessellationline::{Point, PointIndexPath, Transform};
 
 pub fn draw(ctx: &web_sys::HtmlElement, _: u32, _: u32, f: &TessellationFigure) {
     let backend = Box::new(SVGBackend);

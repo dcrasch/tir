@@ -271,7 +271,7 @@ fn main() {
         bias: wgpu::DepthBiasState::default(),
     });
 
-    let mut render_pipeline_descriptor = wgpu::RenderPipelineDescriptor {
+    let render_pipeline_descriptor = wgpu::RenderPipelineDescriptor {
         label: None,
         layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState {
@@ -327,10 +327,6 @@ fn main() {
     };
 
     let render_pipeline = device.create_render_pipeline(&render_pipeline_descriptor);
-
-    // TODO: this isn't what we want: we'd need the equivalent of VK_POLYGON_MODE_LINE,
-    // but it doesn't seem to be exposed by wgpu?
-    render_pipeline_descriptor.primitive.topology = wgpu::PrimitiveTopology::LineList;
 
     let swapchain_capabilities = surface.get_capabilities(&adapter);
     let size = window.inner_size();

@@ -12,20 +12,20 @@ Live view : https://dcrasch.github.io/tir/
 - [x] Publish tessellations crate on crates.io
 - [ ] Build flutter? android ios mobile app using rid
 - [ ] Write a blog about building the program
-- [ ] Write more documentation about raqote and euclid.
+- [ ] Write more documentation about tiny-skia and euclid.
 
 ## Rust programming docs and example code
 
 * https://doc.rust-lang.org/book/ch11-03-test-organization.html
 * https://github.com/redox-os/orbtk/blob/develop/crates/render/src/web/mod.rs
-* https://github.com/jrmuizel/raqote-examples/
+* https://github.com/linebender/tiny-skia/tree/main/examples
 * https://github.com/serde-rs/serde/issues/723
 
 ## Links
 
 * https://github.com/isohedral/tactile-js
 * https://github.com/DBraun/tactile-python
-* https://github.com/jrmuizel/raqote
+* https://github.com/linebender/tiny-skia
 * https://github.com/nical/lyon
 * https://github.com/gfx-rs/wgpu
 * https://github.com/flutter-rs/flutter-rs

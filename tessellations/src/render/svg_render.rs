@@ -1,6 +1,6 @@
 use crate::tessellationfigure::{TessellationFigure, TessellationPlane};
+use crate::tessellationline::{Point, Transform};
 use euclid::Angle;
-use raqote::*;
 
 use svg::node::element::path::{Command, Data, Position::Absolute};
 use svg::node::element::{Definitions, Path, Use, SVG};

@@ -1,8 +1,7 @@
 use crate::tessellationfigure::{TessellationFigure, TessellationPlane};
 use euclid::Angle;
-use lyon::algorithms::rounded_polygon;
-use lyon::math::{point, Transform};
-use lyon::path::{Path, Polygon, NO_ATTRIBUTES};
+use lyon::math::point;
+use lyon::path::{Path, Polygon};
 use palette::Srgb;
 
 #[derive(Clone, Copy)]
@@ -99,7 +98,6 @@ mod tests {
     #[test]
     fn test_square_shader() {
         let f = TessellationFigure::square();
-        let m: Transform = Transform::identity();
         let shaders = LyonBackend.build(&f).unwrap();
         assert_eq!(
             format!("{:?}", shaders),
