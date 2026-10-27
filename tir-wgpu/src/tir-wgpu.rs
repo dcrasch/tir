@@ -487,7 +487,15 @@ fn main() {
                 };
             }
         }
-        let figure_count = 1 + tiling.len() as u32;
+        // With a background, primitive 1 is the first tiling placement, so
+        // draw exactly one instance per placement. Without one, draw the
+        // cyan primitive at index 1 once. (The old count drew one extra
+        // unused red primitive.)
+        let figure_count = if scene.draw_background {
+            tiling.len().max(1) as u32
+        } else {
+            1
+        };
 
         let vbo = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -822,31 +830,28 @@ fn update_inputs(
     true
 }
 
+/// Four colours at right angles on the hue circle.
+///
+/// The order matters because `build_tiling` uses the first `figure.colors`
+/// entries: two-colour figures get opposite colours, three-colour figures add
+/// a third quadrant, and four-colour figures use all four.
+fn palette_for_hue(base_hue: f32) -> [Srgb<f32>; 4] {
+    [
+        base_hue,
+        (base_hue + 180.0) % 360.0,
+        (base_hue + 90.0) % 360.0,
+        (base_hue + 270.0) % 360.0,
+    ]
+    .map(|hue| {
+        let color = Hsl::new(hue, 0.7, 0.6).into_format();
+        Srgb::from_color(color)
+    })
+}
+
 fn generate_palette() -> Vec<Srgb<f32>> {
     let mut rng: ThreadRng = rand::thread_rng();
-
-    // Generate a random base hue
     let base_hue = rng.gen_range(0..360) as f32;
-    let mut palette = Vec::<Srgb<f32>>::new();
-    // Calculate three analogous hues
-    let hue_shift = 30.0; // You can adjust this value for different analogous colors
-    let analogous_hues = vec![
-        (base_hue + hue_shift) % 360.0,
-        (base_hue + 2.0 * hue_shift) % 360.0,
-        (base_hue + 3.0 * hue_shift) % 360.0,
-    ];
-
-    // Convert analogous hues to RGB colors and add to the palette
-    for hue in &analogous_hues {
-        let color = Hsl::new(*hue, 0.7, 0.6).into_format();
-        palette.push(Srgb::from_color(color));
-    }
-
-    // Add a complementary color to the palette
-    let complementary_hue = (base_hue + 180.0) % 360.0;
-    let complementary_color = Hsl::new(complementary_hue, 0.7, 0.6).into_format();
-    palette.push(Srgb::from_color(complementary_color));
-    palette
+    palette_for_hue(base_hue).to_vec()
 }
 
 #[cfg(test)]
@@ -864,6 +869,23 @@ mod tests {
                 primitives <= PRIM_BUFFER_LEN,
                 "{id} needs {primitives} primitives, buffer holds {PRIM_BUFFER_LEN}"
             );
+        }
+    }
+
+    #[test]
+    fn all_palette_colours_are_different() {
+        for base in 0..360 {
+            let palette = palette_for_hue(base as f32);
+            for i in 0..palette.len() {
+                for j in 0..i {
+                    let a = (palette[i].red, palette[i].green, palette[i].blue);
+                    let b = (palette[j].red, palette[j].green, palette[j].blue);
+                    assert_ne!(
+                        a, b,
+                        "base hue {base}: palette colours {j} and {i} are identical"
+                    );
+                }
+            }
         }
     }
 }
