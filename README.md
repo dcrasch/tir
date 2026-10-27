@@ -19,6 +19,10 @@ title shows the figure name, Heesch code, isohedral (IH) type and wallpaper
 group, e.g.
 `Tessellations of Squares with 4-way rotation (C4C4C4C4, IH 55, p4)`.
 
+`tir-wgpu` uses four ceramic colours sampled from the Alhambra "Brilliant"
+palette (Amalfi, Capri, Canary and Denim) and a subtle screen-space grain.
+Press `r` there to cycle the colour assignment.
+
 Every figure is checked by `tessellations/tests/test_grid.rs`, which verifies
 that the generated tiling covers a sampled area exactly once (no gaps or
 overlaps). Base polygons and edge pairings for the IH types follow

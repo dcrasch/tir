@@ -5,8 +5,7 @@ use lyon::tessellation;
 use lyon::tessellation::geometry_builder::*;
 use lyon::tessellation::{FillOptions, FillTessellator};
 use lyon::tessellation::{StrokeOptions, StrokeTessellator};
-use palette::{FromColor, Hsl, Srgb};
-use rand::prelude::*;
+use palette::Srgb;
 use winit::dpi::PhysicalSize;
 use winit::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
 use winit::event_loop::{ControlFlow, EventLoop};
@@ -110,11 +109,11 @@ fn main() {
     println!("  PgUp/PgDown: zoom in/out");
     println!("  b: toggle drawing the background");
     println!("  a/z: increase/decrease the stroke width");
-    println!("  r: new random palette");
+    println!("  r: cycle palette");
     println!("  s/l: save/load figure.json");
     println!("  w: save out.svg");
 
-    let mut palette: Vec<Srgb<f32>> = generate_palette();
+    let mut palette: Vec<Srgb<f32>> = alhambra_palette();
     let mut figure_index = 0usize;
     let mut f = TessellationFigure::by_index(figure_index);
 
@@ -630,7 +629,7 @@ fn update_inputs(
     scene: &mut SceneParams,
     figure: &mut TessellationFigure,
     figure_index: &mut usize,
-    palette: &mut Vec<Srgb<f32>>,
+    palette: &mut [Srgb<f32>],
 ) -> bool {
     let mpx = (window.inner_size().width as f32) / 2.0;
     let mpy = (window.inner_size().height as f32) / 2.0;
@@ -789,7 +788,7 @@ fn update_inputs(
                 window.request_redraw();
             }
             VirtualKeyCode::R => {
-                *palette = generate_palette();
+                palette.rotate_left(1);
                 window.request_redraw();
             }
             VirtualKeyCode::S => {
@@ -833,28 +832,24 @@ fn update_inputs(
     true
 }
 
-/// Four colours at right angles on the hue circle.
+/// Four ceramic colours sampled from the Alhambra "Brilliant" palette:
+/// Amalfi, Capri, Canary and Denim.
 ///
 /// The order matters because `build_tiling` uses the first `figure.colors`
-/// entries: two-colour figures get opposite colours, three-colour figures add
-/// a third quadrant, and four-colour figures use all four.
-fn palette_for_hue(base_hue: f32) -> [Srgb<f32>; 4] {
-    [
-        base_hue,
-        (base_hue + 180.0) % 360.0,
-        (base_hue + 90.0) % 360.0,
-        (base_hue + 270.0) % 360.0,
-    ]
-    .map(|hue| {
-        let color = Hsl::new(hue, 0.7, 0.6).into_format();
-        Srgb::from_color(color)
-    })
-}
+/// entries: two-colour figures get rose and teal, three-colour figures add
+/// gold, and four-colour figures add the deep blue.
+const ALHAMBRA_PALETTE: [[u8; 3]; 4] = [
+    [0xc9, 0x6c, 0x9b], // Amalfi
+    [0x56, 0x87, 0x83], // Capri
+    [0xdb, 0xc2, 0x4b], // Canary
+    [0x1b, 0x1c, 0x47], // Denim
+];
 
-fn generate_palette() -> Vec<Srgb<f32>> {
-    let mut rng: ThreadRng = rand::thread_rng();
-    let base_hue = rng.gen_range(0..360) as f32;
-    palette_for_hue(base_hue).to_vec()
+fn alhambra_palette() -> Vec<Srgb<f32>> {
+    ALHAMBRA_PALETTE
+        .iter()
+        .map(|&[r, g, b]| Srgb::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0))
+        .collect()
 }
 
 #[cfg(test)]
@@ -877,17 +872,13 @@ mod tests {
 
     #[test]
     fn all_palette_colours_are_different() {
-        for base in 0..360 {
-            let palette = palette_for_hue(base as f32);
-            for i in 0..palette.len() {
-                for j in 0..i {
-                    let a = (palette[i].red, palette[i].green, palette[i].blue);
-                    let b = (palette[j].red, palette[j].green, palette[j].blue);
-                    assert_ne!(
-                        a, b,
-                        "base hue {base}: palette colours {j} and {i} are identical"
-                    );
-                }
+        let palette = alhambra_palette();
+        assert_eq!(palette.len(), 4);
+        for i in 0..palette.len() {
+            for j in 0..i {
+                let a = (palette[i].red, palette[i].green, palette[i].blue);
+                let b = (palette[j].red, palette[j].green, palette[j].blue);
+                assert_ne!(a, b, "Alhambra palette colours {j} and {i} are identical");
             }
         }
     }
