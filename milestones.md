@@ -97,8 +97,9 @@ must pass.
       (`OutputPrimitive` gets a 2×3 matrix instead of `angle`; update
       `tir-wgpu/shaders/geometry.vs.wgsl` accordingly) and use the figure's colour map
       instead of the brick/hexagon/diamond heuristics.
-- [ ] Serde: versioned file format; loading old JSON files still works
-      (migrate `rotdiv`/`shift` into the new layout).
+- [x] Serde: new `lines`/`links`/`colors`/`ih` JSON format; removed the legacy
+      line fields and the unused `TessellationShape`. Old JSON is not supported
+      and there is no version field; see the "Figure JSON" section of the README.
 - [x] Port `square`, `hexagon`, `brick`, `diamond`, `square90`, `triangle`
       to the new model.
 - [x] Generalise `tests/test_grid.rs::test_grid_covers_area_exactly_once` to use the

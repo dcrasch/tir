@@ -236,6 +236,17 @@ mod tests {
     }
 
     #[test]
+    fn test_old_figure_json_is_rejected() {
+        // `shape` was removed from the new format.
+        let legacy_shape = r#"{"lines":[],"links":[],"colors":2,"ih":null,"shape":"S"}"#;
+        assert!(serde_json::from_str::<TessellationFigure>(legacy_shape).is_err());
+
+        // The old grid/rotation format had top-level layout fields.
+        let legacy_grid = r#"{"lines":[],"links":[],"colors":2,"ih":null,"grid":[1,0,1,0]}"#;
+        assert!(serde_json::from_str::<TessellationFigure>(legacy_grid).is_err());
+    }
+
+    #[test]
     fn test_orientation_counts() {
         // Number of tile orientations ("Ways" on tiled.art).
         let expected = [

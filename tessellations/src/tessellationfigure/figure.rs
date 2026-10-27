@@ -1,7 +1,6 @@
 use crate::tessellationfigure::coloring::{color_table, ColorTable};
 use crate::tessellationfigure::colormap::color_map;
 use crate::tessellationline::{Point, PointIndexPath, TessellationLine, Transform};
-use crate::tessellationshape::TessellationShape;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -9,6 +8,7 @@ use std::collections::{HashMap, HashSet};
 /// that takes the neighbouring tile across that edge. `bad` edges are related by
 /// translation, rotation, glide reflection or an internal mirror.
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct EdgeLink {
     /// Source edge.
     pub a: usize,
@@ -45,15 +45,19 @@ pub struct Placement {
 }
 
 /// Figure type with lines
+///
+/// The JSON form is `{"lines":[...],"links":[...],"colors":2,"ih":41}`.
+/// See the "Figure JSON" section of the README for the full schema. Unknown
+/// fields are rejected; files from the old grid/rotation format are not
+/// supported.
 #[derive(Default, Debug, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
 pub struct TessellationFigure {
     pub lines: Vec<TessellationLine>,
     pub links: Vec<EdgeLink>,
     /// Number of colours used to draw the tiling.
     pub colors: usize,
-    pub shape: TessellationShape,
     /// Isohedral tiling type, when the figure is one of the tiled.art types.
-    #[serde(default)]
     pub ih: Option<u8>,
 }
 
@@ -63,7 +67,6 @@ impl TessellationFigure {
             lines: Vec::<TessellationLine>::new(),
             links: Vec::<EdgeLink>::new(),
             colors: 4,
-            shape: TessellationShape::S,
             ih: None,
         }
     }
@@ -91,11 +94,6 @@ impl TessellationFigure {
             .iter()
             .flat_map(|l| l.points().to_vec())
             .collect()
-    }
-
-    /// Number of edges of the tile.
-    pub fn edge_count(&self) -> usize {
-        self.lines.len()
     }
 
     /// Check if a point falls on a line within rectsize of all the lines
@@ -424,7 +422,6 @@ impl TessellationFigure {
         self.lines = other.lines;
         self.links = other.links;
         self.colors = other.colors;
-        self.shape = other.shape;
         self.ih = other.ih;
     }
 }

@@ -1,6 +1,3 @@
-use euclid::vec2;
-use euclid::Angle;
-
 use serde::de::Deserializer;
 use serde::ser::{SerializeSeq, SerializeTuple, Serializer};
 use serde::{Deserialize, Serialize};
@@ -72,8 +69,17 @@ where
     Ok(Transform::new(v.0, v.1, v.2, v.3, v.4, v.5))
 }
 
-/// Type to store the points on a line and the transform to the corresponding line
+/// One edge of a tile.
+///
+/// The JSON form is
+/// `{"points":[{"x":0.0,"y":0.0},...],"transform":[m11,m12,m21,m22,m31,m32]}`.
+/// `transform` is the line's own isometry; the built-in figures use the
+/// identity, while the isometries that copy an edge onto its neighbour are
+/// stored on [`EdgeLink`](crate::tessellationfigure::EdgeLink). Unknown fields
+/// are rejected, so files from the old rotation/translation format no longer
+/// load.
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields)]
 pub struct TessellationLine {
     #[serde(
         serialize_with = "points_serialize",
@@ -86,58 +92,20 @@ pub struct TessellationLine {
         deserialize_with = "transform_deserialize"
     )]
     transform: Transform,
-
-    #[serde(
-        serialize_with = "transform_serialize",
-        deserialize_with = "transform_deserialize"
-    )]
-    ci: Transform,
-
-    angle: f32,
-    tx: f32,
-    ty: f32,
 }
 
 impl TessellationLine {
-    pub fn new(tx: f32, ty: f32, angle: f32) -> Self {
-        let transform = Transform::rotation(Angle::degrees(-angle)).then_translate(vec2(tx, ty));
-        Self {
-            points: Vec::<Point>::new(),
-            ci: transform.inverse().unwrap(),
-            transform,
-            angle,
-            tx,
-            ty,
-        }
-    }
-
     /// Line from an arbitrary isometry (rotation, translation, reflection or glide).
     pub fn from_transform(transform: Transform) -> Self {
         Self {
             points: Vec::<Point>::new(),
             transform,
-            ci: transform.inverse().unwrap(),
-            angle: 0.0,
-            tx: 0.0,
-            ty: 0.0,
         }
     }
 
     /// Points of the line, including both shared endpoints.
     pub fn points(&self) -> &[Point] {
         &self.points
-    }
-
-    /// Index of the point closest to `p`, if the line has points.
-    pub fn nearest_index(&self, p: Point) -> Option<usize> {
-        let mut best: Option<(usize, f32)> = None;
-        for (i, &q) in self.points.iter().enumerate() {
-            let d = (q - p).square_length();
-            if best.is_none_or(|(_, bd)| d < bd) {
-                best = Some((i, d));
-            }
-        }
-        best.map(|(i, _)| i)
     }
 
     /// Position where a point at `p` belongs: just after the endpoint of the
@@ -176,36 +144,22 @@ impl TessellationLine {
         self.points[index] = point;
     }
 
-    /// get a list of the points
-    pub fn dpoints(&self) -> Vec<Point> {
-        self.points.to_vec()
+    /// The inverse of the edge isometry, used to map a point in the plane back
+    /// into the edge's own coordinate system.
+    fn inverse(&self) -> Transform {
+        self.transform
+            .inverse()
+            .expect("tessellation line isometries are invertible")
     }
 
-    /// get a list of the transformed points
-    pub fn cpoints(&self) -> Vec<Point> {
-        self.points
-            .iter()
-            .map(|&p| self.transform.transform_point(p))
-            .collect()
-    }
-
-    /// get a list of the transformed points
-    pub fn crpoints(&self) -> Vec<Point> {
-        self.points
-            .iter()
-            .rev()
-            .map(|&p| self.transform.transform_point(p))
-            .collect()
-    }
-
-    /// transform a `point` using the transform matrix
+    /// transform a `point` using the inverse of the transform matrix
     pub fn cpoint(&self, point: Point) -> Point {
-        self.ci.transform_point(point)
+        self.inverse().transform_point(point)
     }
 
     /// check if a point
     pub fn hitpoint(&self, p1: Point, rectsize: f32) -> Option<PointIndexPath> {
-        let p2 = self.ci.transform_point(p1);
+        let p2 = self.inverse().transform_point(p1);
         let second_last = self.points.len() - 1;
         for (i, &p) in self.points[1..second_last].iter().enumerate() {
             if hit(p1, p, rectsize) {
@@ -228,7 +182,7 @@ impl TessellationLine {
 
     /// Check if a point falls on a line within rectsize
     pub fn hitline(&self, p1: Point, rectsize: f32) -> Option<PointIndexPath> {
-        let p2 = self.ci.transform_point(p1);
+        let p2 = self.inverse().transform_point(p1);
         for (i, p) in self.points.windows(2).enumerate() {
             if breakline(p[0], p[1], p1, rectsize) {
                 return Some(PointIndexPath {
@@ -254,10 +208,6 @@ impl Default for TessellationLine {
         Self {
             points: Vec::default(),
             transform: Transform::identity(),
-            ci: Transform::identity(),
-            angle: 0.0,
-            tx: 0.0,
-            ty: 0.0,
         }
     }
 }
@@ -397,14 +347,14 @@ mod tests {
     #[test]
     fn test_transform_serialize() {
         let line = TessellationLine::default();
-        let json = "{\"points\":[],\"transform\":[1.0,0.0,0.0,1.0,0.0,0.0],\"ci\":[1.0,0.0,0.0,1.0,0.0,0.0],\"angle\":0.0,\"tx\":0.0,\"ty\":0.0}";
+        let json = "{\"points\":[],\"transform\":[1.0,0.0,0.0,1.0,0.0,0.0]}";
         assert_eq!(serde_json::to_string(&line).unwrap(), json);
     }
 
     #[test]
     fn test_transform_deserialize() {
         let line = TessellationLine::default();
-        let json = "{\"points\":[],\"transform\":[1.0,0.0,0.0,1.0,0.0,0.0],\"ci\":[1.0,0.0,0.0,1.0,0.0,0.0],\"angle\":0.0,\"tx\":0.0,\"ty\":0.0}";
+        let json = "{\"points\":[],\"transform\":[1.0,0.0,0.0,1.0,0.0,0.0]}";
         let res: TessellationLine = serde_json::from_str(json).unwrap();
         assert_eq!(res, line);
     }

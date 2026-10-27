@@ -25,6 +25,59 @@ overlaps). Base polygons and edge pairings for the IH types follow
 with tactile's per-type colouring table (`coloring.rs`), giving the same balanced
 colour patterns as tactile.
 
+## Figure JSON
+
+`tir` and `tir-wgpu` save the current figure to `figure.json` with `s` and load
+it again with `l`. The file is the plain serde representation of
+`TessellationFigure`. There is no version field and no migration: the old
+format is not supported. Unknown fields are rejected, so a file containing the
+old `ci`, `angle`, `tx`, `ty`, `shape`, `grid` or `rotdiv` fields will not load.
+
+A minimal complete figure (the IH 41 square) looks like this:
+
+```json
+{
+  "lines": [
+    {
+      "points": [{"x": 0.0, "y": 0.0}, {"x": 1.0, "y": 0.0}],
+      "transform": [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+    },
+    {
+      "points": [{"x": 1.0, "y": 0.0}, {"x": 1.0, "y": 1.0}],
+      "transform": [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+    },
+    {
+      "points": [{"x": 1.0, "y": 1.0}, {"x": 0.0, "y": 1.0}],
+      "transform": [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+    },
+    {
+      "points": [{"x": 0.0, "y": 1.0}, {"x": 0.0, "y": 0.0}],
+      "transform": [1.0, 0.0, 0.0, 1.0, 0.0, 0.0]
+    }
+  ],
+  "links": [
+    {"a": 0, "b": 2, "symmetry": false, "transform": [1.0, 0.0, 0.0, 1.0, 0.0, 1.0]},
+    {"a": 1, "b": 3, "symmetry": false, "transform": [1.0, 0.0, 0.0, 1.0, -1.0, 0.0]}
+  ],
+  "colors": 2,
+  "ih": 41
+}
+```
+
+- `lines` is the tile outline in order. Edge `i` runs from the first to the last
+  point of its `points` array; consecutive edges share endpoints. Intermediate
+  points are editable handles and are copied to linked edges.
+- A line's own `transform` is normally the identity. The edge-to-edge
+  isometries used to build the tiling live in `links`.
+- `links` connects edge `a` to edge `b`. `transform` maps `a` onto `b` with the
+  direction reversed; `symmetry: true` marks an inner mirror, which keeps the
+  tile symmetric but does not create a neighbouring tile.
+- The six transform values are `[m11, m12, m21, m22, m31, m32]`, the same order
+  as an SVG `matrix(...)`: `x' = m11*x + m21*y + m31`, `y' = m12*x + m22*y + m32`.
+- `colors` is the number of colours in the tactile table. `ih` is the tactile
+  isohedral type (1–93), or `null` for a figure that is not one of the built-in
+  symmetries (for example `brick()`).
+
 ## TODO
 
 - [x] Build simple ui with minifb
