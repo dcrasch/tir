@@ -10,7 +10,7 @@ use winit::{
 use winit_input_helper::WinitInputHelper;
 
 use tessellations::render::*;
-use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane, FIGURE_IDS};
+use tessellations::tessellationfigure::{TessellationFigure, FIGURE_IDS};
 use tessellations::tessellationline::{Point, PointIndexPath, Transform};
 
 const WIDTH: u32 = 400;
@@ -19,8 +19,8 @@ const HEIGHT: u32 = 400;
 fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
-    let mut f = TessellationFigure::square();
     let mut figure_index = 0usize;
+    let mut f = TessellationFigure::by_index(figure_index);
     let window = {
         let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
         WindowBuilder::new()
@@ -35,7 +35,6 @@ fn main() -> Result<(), Error> {
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         Pixels::new(WIDTH, HEIGHT, surface_texture)?
     };
-    let p = TessellationPlane {};
     let backend = Box::new(Backend);
     let svgbackend = Box::new(SVGBackend);
     let mut drag: Option<(f32, f32)> = None;
@@ -45,7 +44,7 @@ fn main() -> Result<(), Error> {
 
     event_loop.run(move |event, _, control_flow| {
         if let Event::RedrawRequested(_) = event {
-            let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
+            let image = backend.render_tiling_to_image(&f, &m).unwrap();
             pixels.frame_mut().copy_from_slice(image.get_data());
 
             if pixels.render().is_err() {
@@ -73,15 +72,15 @@ fn main() -> Result<(), Error> {
                         .expect("file error")
                         .as_str(),
                 )
-                .expect("json error"); //TODO set matrix
+                .expect("json error");
                 window.request_redraw();
             }
             if input.key_pressed(VirtualKeyCode::E) {
-                let image = backend.render_plane_to_image(&p, &f, &m).unwrap();
+                let image = backend.render_tiling_to_image(&f, &m).unwrap();
                 image.save_png(std::path::Path::new("out.png"));
             }
             if input.key_pressed(VirtualKeyCode::S) {
-                let svg = svgbackend.compose_plane(&p, &f, &m).unwrap();
+                let svg = svgbackend.compose_tiling(&f, &m).unwrap();
                 svg.save_svg(std::path::Path::new("out.svg"));
             }
             if input.key_pressed(VirtualKeyCode::N) {

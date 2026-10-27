@@ -1,4 +1,4 @@
-use crate::tessellationfigure::{TessellationFigure, TessellationPlane};
+use crate::tessellationfigure::TessellationFigure;
 use crate::tessellationline::{Point, Transform};
 
 use svg::node::element::path::{Command, Data, Position::Absolute};
@@ -12,12 +12,7 @@ pub trait Compose {
     /// Compose a figure to a document
     fn compose(&self, figure: &TessellationFigure, m: &Transform) -> Option<SVG>;
 
-    fn compose_plane(
-        &self,
-        plane: &TessellationPlane,
-        figure: &TessellationFigure,
-        m: &Transform,
-    ) -> Option<SVG>;
+    fn compose_tiling(&self, figure: &TessellationFigure, m: &Transform) -> Option<SVG>;
 }
 
 impl Compose for SVGBackend {
@@ -63,12 +58,7 @@ impl Compose for SVGBackend {
         Some(document)
     }
 
-    fn compose_plane(
-        &self,
-        plane: &TessellationPlane,
-        figure: &TessellationFigure,
-        m: &Transform,
-    ) -> Option<SVG> {
+    fn compose_tiling(&self, figure: &TessellationFigure, m: &Transform) -> Option<SVG> {
         let mut document = Document::new().set("viewBox", (0, 0, 400, 400));
         let colors = ["red", "green", "blue", "black"];
 
@@ -95,7 +85,7 @@ impl Compose for SVGBackend {
         document.append(defs);
 
         let ncolors = figure.colors.clamp(1, colors.len());
-        for placement in plane.placements(figure, 12.0, 12.0) {
+        for placement in figure.placements(12.0, 12.0) {
             let t = placement.transform.then(m);
             let tile_figure = Use::new()
                 .set("href", "#figure")

@@ -134,26 +134,6 @@ impl TessellationFigure {
         .with_ih(41)
     }
 
-    /// Bricks: Hexagons (TTTTTT) drawn as a brick.
-    pub fn brick() -> Self {
-        from_polygon(
-            &[
-                pt(0.0, 0.0),
-                pt(0.5, 0.0),
-                pt(1.0, 0.0),
-                pt(1.0, 1.0),
-                pt(0.5, 1.0),
-                pt(0.0, 1.0),
-            ],
-            &[
-                (0, 4, EdgeKind::Translate),
-                (1, 3, EdgeKind::Translate),
-                (2, 5, EdgeKind::Translate),
-            ],
-            3,
-        )
-    }
-
     /// Hexagons: one orientation (TTTTTT).
     pub fn hexagon() -> Self {
         from_polygon(

@@ -10,14 +10,13 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use tessellations::render::*;
-use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane, FIGURE_IDS};
+use tessellations::tessellationfigure::{TessellationFigure, FIGURE_IDS};
 use tessellations::tessellationline::{Point, PointIndexPath, Transform};
 
-pub fn draw(ctx: &web_sys::HtmlElement, _: u32, _: u32, f: &TessellationFigure) {
+fn draw(ctx: &web_sys::HtmlElement, f: &TessellationFigure) {
     let backend = Box::new(SVGBackend);
     let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
-    let p = TessellationPlane {};
-    let svg_document = backend.compose_plane(&p, f, &m).unwrap();
+    let svg_document = backend.compose_tiling(f, &m).unwrap();
     ctx.set_inner_html(&svg_document.get_data());
 }
 
@@ -43,7 +42,7 @@ fn app(name: &str) -> Result<(), JsValue> {
     let context = Rc::new(context);
     let pressed = Rc::new(Cell::new(false));
 
-    draw(&context, 400, 400, &figure.borrow_mut());
+    draw(&context, &figure.borrow());
 
     {
         let context = context.clone();
@@ -60,7 +59,7 @@ fn app(name: &str) -> Result<(), JsValue> {
                 _ => match f.hitline(p, 0.05) {
                     Some(h) => {
                         f.insert(h, p);
-                        draw(&context, 400, 400, &f);
+                        draw(&context, &f);
                         Some(PointIndexPath {
                             line_index: h.line_index,
                             point_index: h.point_index + 1,
@@ -92,7 +91,7 @@ fn app(name: &str) -> Result<(), JsValue> {
 
                 if let Some(h) = selected_point_index_cloned.get() {
                     f.update(h, p);
-                    draw(&context, 400, 400, &f);
+                    draw(&context, &f);
                 }
             }
         }) as Box<dyn FnMut(_)>);
@@ -125,7 +124,7 @@ fn app(name: &str) -> Result<(), JsValue> {
             if let Some(document) = web_sys::window().and_then(|w| w.document()) {
                 document.set_title(&TessellationFigure::title(i));
             }
-            draw(&context, 400, 400, &f);
+            draw(&context, &f);
         }) as Box<dyn FnMut(_)>);
         editor.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
         closure.forget();

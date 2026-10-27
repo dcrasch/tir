@@ -18,10 +18,8 @@ use wgpu::util::DeviceExt;
 use futures::executor::block_on;
 
 use tessellations::render::*;
-use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
+use tessellations::tessellationfigure::{TessellationFigure, FIGURE_IDS};
 use tessellations::tessellationline::PointIndexPath;
-
-//use log;
 
 const PRIM_BUFFER_LEN: usize = 1356;
 
@@ -71,14 +69,6 @@ impl Primitive {
 unsafe impl bytemuck::Pod for Primitive {}
 unsafe impl bytemuck::Zeroable for Primitive {}
 
-#[repr(C)]
-#[derive(Copy, Clone)]
-struct BgPoint {
-    point: [f32; 2],
-}
-unsafe impl bytemuck::Pod for BgPoint {}
-unsafe impl bytemuck::Zeroable for BgPoint {}
-
 const DEFAULT_WINDOW_WIDTH: f32 = 800.0;
 const DEFAULT_WINDOW_HEIGHT: f32 = 800.0;
 
@@ -112,17 +102,18 @@ fn main() {
     env_logger::init();
     println!("== wgpu example ==");
     println!("Controls:");
+    println!("  n/p: next/previous figure");
     println!("  Arrow keys: scrolling");
     println!("  PgUp/PgDown: zoom in/out");
     println!("  b: toggle drawing the background");
     println!("  a/z: increase/decrease the stroke width");
+    println!("  r: new random palette");
+    println!("  s/l: save/load figure.json");
+    println!("  w: save out.svg");
 
     let mut palette: Vec<Srgb<f32>> = generate_palette();
-    eprintln!("{:?}", palette);
-    // add tessellation square
-    let mut f = TessellationFigure::triangle();
-    let plane = TessellationPlane {};
-    //let m: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(0.0, 0.0));
+    let mut figure_index = 0usize;
+    let mut f = TessellationFigure::by_index(figure_index);
 
     // Number of samples for anti-aliasing
     // Set to 1 to disable
@@ -138,7 +129,6 @@ fn main() {
         zoom: 2.0,
         target_scroll: vector(0.0, 0.0),
         scroll: vector(0.0, 0.0),
-        show_points: true,
         stroke_width: 1.0,
         target_stroke_width: 1.0,
         draw_background: true,
@@ -152,7 +142,9 @@ fn main() {
     };
 
     let event_loop = EventLoop::new();
-    let window_builder = WindowBuilder::new().with_inner_size(scene.window_size);
+    let window_builder = WindowBuilder::new()
+        .with_title(TessellationFigure::title(figure_index))
+        .with_inner_size(scene.window_size);
     let window = window_builder.build(&event_loop).unwrap();
 
     // create an instance
@@ -349,6 +341,7 @@ fn main() {
             control_flow,
             &mut scene,
             &mut f,
+            &mut figure_index,
             &mut palette,
         ) {
             // keep polling inputs.
@@ -420,8 +413,7 @@ fn main() {
 
         let lb = Box::new(LyonBackend);
         let path = lb.build(&f).unwrap();
-        let grid = lb.build_plane(&plane, &f, &palette);
-        //println!("{}",grid.len());
+        let tiling = lb.build_tiling(&f, &palette);
         fill_tess
             .tessellate_path(
                 &path,
@@ -473,8 +465,7 @@ fn main() {
         };
 
         if scene.draw_background {
-            // grid stuff
-            for (i, p) in grid.iter().enumerate() {
+            for (i, p) in tiling.iter().enumerate() {
                 cpu_primitives[fill_prim_id + i] = Primitive {
                     color: [p.r, p.g, p.b, 1.0],
                     translate: [p.x * 100.0 - 100.0, p.y * 100.0],
@@ -489,7 +480,7 @@ fn main() {
                 };
             }
         }
-        let figure_count = 1 + grid.len() as u32;
+        let figure_count = 1 + tiling.len() as u32;
 
         let vbo = device.create_buffer_init(&wgpu::util::BufferInitDescriptor {
             label: None,
@@ -598,22 +589,11 @@ impl StrokeVertexConstructor<GpuVertex> for WithId {
     }
 }
 
-pub struct Custom;
-
-impl FillVertexConstructor<BgPoint> for Custom {
-    fn new_vertex(&mut self, vertex: tessellation::FillVertex) -> BgPoint {
-        BgPoint {
-            point: vertex.position().to_array(),
-        }
-    }
-}
-
 struct SceneParams {
     target_zoom: f32,
     zoom: f32,
     target_scroll: Vector,
     scroll: Vector,
-    show_points: bool,
     stroke_width: f32,
     target_stroke_width: f32,
     draw_background: bool,
@@ -631,6 +611,7 @@ fn update_inputs(
     control_flow: &mut ControlFlow,
     scene: &mut SceneParams,
     figure: &mut TessellationFigure,
+    figure_index: &mut usize,
     palette: &mut Vec<Srgb<f32>>,
 ) -> bool {
     let mpx = (window.inner_size().width as f32) / 2.0;
@@ -670,7 +651,6 @@ fn update_inputs(
             ..
         } => {
             if let Some(mouse) = scene.mouse_position {
-                //println!("pressed");
                 scene.drag_start = scene.mouse_position;
                 let mi: Transform = Transform::translation(
                     scene.scroll.x * scene.zoom - mpx,
@@ -680,13 +660,9 @@ fn update_inputs(
 
                 let p = mi.transform_point(Point::new(mouse.0, mouse.1));
                 match figure.hitpoints(p, 0.05) {
-                    Some(h) => {
-                        //println!("hit ");
-                        scene.selected_point_index = Some(h)
-                    }
+                    Some(h) => scene.selected_point_index = Some(h),
                     _ => match figure.hitline(p, 0.05) {
                         Some(h) => {
-                            //println!("breakline");
                             figure.insert(h, p);
                             scene.selected_point_index = Some(PointIndexPath {
                                 line_index: h.line_index,
@@ -724,7 +700,6 @@ fn update_inputs(
 
                 let p = mi.transform_point(Point::new(mouse.0, mouse.1));
                 if let Some(d) = scene.drag_start {
-                    //println!("dragging");
                     if d != mouse {
                         if let Some(h) = scene.selected_point_index {
                             figure.update(h, p);
@@ -770,9 +745,6 @@ fn update_inputs(
             VirtualKeyCode::Down => {
                 scene.target_scroll.y += 50.0 / scene.target_zoom;
             }
-            VirtualKeyCode::P => {
-                scene.show_points = !scene.show_points;
-            }
             VirtualKeyCode::B => {
                 scene.draw_background = !scene.draw_background;
             }
@@ -781,6 +753,18 @@ fn update_inputs(
             }
             VirtualKeyCode::Z => {
                 scene.target_stroke_width *= 0.8;
+            }
+            VirtualKeyCode::N => {
+                *figure_index = (*figure_index + 1) % FIGURE_IDS.len();
+                figure.load(TessellationFigure::by_index(*figure_index));
+                window.set_title(&TessellationFigure::title(*figure_index));
+                window.request_redraw();
+            }
+            VirtualKeyCode::P => {
+                *figure_index = (*figure_index + FIGURE_IDS.len() - 1) % FIGURE_IDS.len();
+                figure.load(TessellationFigure::by_index(*figure_index));
+                window.set_title(&TessellationFigure::title(*figure_index));
+                window.request_redraw();
             }
             VirtualKeyCode::R => {
                 *palette = generate_palette();
@@ -805,45 +789,17 @@ fn update_inputs(
                 window.request_redraw();
             }
             VirtualKeyCode::W => {
-                let p = TessellationPlane {};
                 let svgbackend = Box::new(SVGBackend);
                 let m: Transform =
                     Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
 
-                let svg = svgbackend.compose_plane(&p, figure, &m).unwrap();
+                let svg = svgbackend.compose_tiling(figure, &m).unwrap();
                 svg.save_svg(std::path::Path::new("out.svg"));
-            }
-            VirtualKeyCode::Key1 => {
-                *figure = TessellationFigure::square();
-                window.request_redraw();
-            }
-            VirtualKeyCode::Key2 => {
-                *figure = TessellationFigure::triangle();
-                window.request_redraw();
-            }
-            VirtualKeyCode::Key3 => {
-                *figure = TessellationFigure::square90();
-                window.request_redraw();
-            }
-            VirtualKeyCode::Key4 => {
-                *figure = TessellationFigure::diamond();
-                window.request_redraw();
-            }
-            VirtualKeyCode::Key5 => {
-                *figure = TessellationFigure::brick();
-                window.request_redraw();
-            }
-            VirtualKeyCode::Key6 => {
-                *figure = TessellationFigure::hexagon();
-                window.request_redraw();
             }
             _key => {}
         },
-        _evt => {
-            //println!("{:?}", _evt);
-        }
+        _evt => {}
     }
-    //println!(" -- zoom: {}, scroll: {:?}", scene.target_zoom, scene.target_scroll);
 
     scene.zoom += (scene.target_zoom - scene.zoom) / 3.0;
     scene.scroll = scene.scroll + (scene.target_scroll - scene.scroll) / 3.0;

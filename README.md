@@ -76,7 +76,7 @@ A minimal complete figure (the IH 41 square) looks like this:
   as an SVG `matrix(...)`: `x' = m11*x + m21*y + m31`, `y' = m12*x + m22*y + m32`.
 - `colors` is the number of colours in the tactile table. `ih` is the tactile
   isohedral type (1–93), or `null` for a figure that is not one of the built-in
-  symmetries (for example `brick()`).
+  symmetries (for example a figure built with `TessellationFigure::new()`).
 
 ## TODO
 

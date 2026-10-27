@@ -1,4 +1,4 @@
-use crate::tessellationfigure::{TessellationFigure, TessellationPlane};
+use crate::tessellationfigure::TessellationFigure;
 use lyon::math::point;
 use lyon::path::{Path, Polygon};
 use palette::Srgb;
@@ -9,12 +9,7 @@ pub struct LyonBackend;
 pub trait Builder {
     /// Compose a figure to a document
     fn build(&self, figure: &TessellationFigure) -> Option<Path>;
-    fn build_plane(
-        &self,
-        plane: &TessellationPlane,
-        figure: &TessellationFigure,
-        colors: &[Srgb],
-    ) -> Vec<OutputPrimitive>;
+    fn build_tiling(&self, figure: &TessellationFigure, colors: &[Srgb]) -> Vec<OutputPrimitive>;
 }
 
 impl Builder for LyonBackend {
@@ -35,15 +30,10 @@ impl Builder for LyonBackend {
         Some(figure_path)
     }
 
-    fn build_plane(
-        &self,
-        plane: &TessellationPlane,
-        figure: &TessellationFigure,
-        palette: &[Srgb],
-    ) -> Vec<OutputPrimitive> {
+    fn build_tiling(&self, figure: &TessellationFigure, palette: &[Srgb]) -> Vec<OutputPrimitive> {
         let ncolors = figure.colors.clamp(1, palette.len());
-        plane
-            .placements(figure, 16.0, 16.0)
+        figure
+            .placements(16.0, 16.0)
             .into_iter()
             .map(|p| {
                 let cc = palette[p.color % ncolors];

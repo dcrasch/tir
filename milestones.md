@@ -51,8 +51,9 @@ All 35 symmetries are implemented in
 | `quad3sym` | Rhombuses, with inner mirror and 3-way rotation | C3C3\|C3C3 | 36 | p31m |
 | `quad4sym` | Squares, with inner mirror and 4-way rotation | C4C4\|C4C4 | 71 | p4g |
 
-`brick()` (a TTTTTT p1 layout) is kept as a constructor but is not one of the
-35 symmetries, so it is not in the registry.
+The 35 symmetries in the table above are all reachable from the app's figure
+registry. The old standalone `brick()` and `TessellationPlane` helpers have been
+removed.
 
 ### What changed from the original model
 
@@ -65,7 +66,7 @@ All 35 symmetries are implemented in
   coloured with the per-type colouring tables from
   [tactile-rs](https://github.com/abusch/tactile-rs/), so each figure uses the same
   balanced colour patterns as tactile (or a lattice-parity fallback for figures
-  without an IH type, such as `brick`).
+  without an IH type).
 - Figures can carry inner mirror axes (`from_polygon_with_mirrors`), which are
   propagated to edited points but never create extra tiles.
 
@@ -91,7 +92,7 @@ must pass.
       - two lattice vectors `a`, `b`
       - a list of *aspect* transforms (one per tile orientation in the unit cell)
       - an orientation → colour index map (min colours from tiled.art)
-- [x] `TessellationPlane::grid` returns placements (`lattice point × aspect transform`)
+- [x] `TessellationFigure::placements` returns placements (`lattice point × aspect transform`)
       instead of points; covering logic keeps the radius padding.
 - [x] Renderers (svg, tiny-skia, lyon/wgpu) consume full transforms
       (`OutputPrimitive` gets a 2×3 matrix instead of `angle`; update
@@ -100,8 +101,8 @@ must pass.
 - [x] Serde: new `lines`/`links`/`colors`/`ih` JSON format; removed the legacy
       line fields and the unused `TessellationShape`. Old JSON is not supported
       and there is no version field; see the "Figure JSON" section of the README.
-- [x] Port `square`, `hexagon`, `brick`, `diamond`, `square90`, `triangle`
-      to the new model.
+- [x] Port the original `square`, `hexagon`, `diamond`, `square90` and
+      `triangle` figures to the new model.
 - [x] Generalise `tests/test_grid.rs::test_grid_covers_area_exactly_once` to use the
       aspect transforms (incl. reflections) and run it for every figure.
 - [ ] New test helper: for every derived edge, check that the transformed source edge

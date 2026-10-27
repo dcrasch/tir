@@ -1,4 +1,4 @@
-use crate::tessellationfigure::{TessellationFigure, TessellationPlane};
+use crate::tessellationfigure::TessellationFigure;
 use crate::tessellationline::{Point, Transform};
 use tiny_skia::{Color, FillRule, LineCap, LineJoin, Paint, Path, PathBuilder, Pixmap, Stroke};
 
@@ -16,10 +16,9 @@ pub trait Render {
         m: &Transform,
     ) -> Option<Box<dyn OutputImage>>;
 
-    /// Render a figure and tiling on a plane to a image
-    fn render_plane_to_image(
+    /// Render the tiled figure to an image
+    fn render_tiling_to_image(
         &self,
-        plane: &TessellationPlane,
         figure: &TessellationFigure,
         m: &Transform,
     ) -> Option<Box<dyn OutputImage>>;
@@ -88,9 +87,8 @@ impl Render for Backend {
         Some(Box::new(pixmap))
     }
 
-    fn render_plane_to_image(
+    fn render_tiling_to_image(
         &self,
-        plane: &TessellationPlane,
         figure: &TessellationFigure,
         m: &Transform,
     ) -> Option<Box<dyn OutputImage>> {
@@ -106,7 +104,7 @@ impl Render for Backend {
 
         let tile = figure_path(figure, &Transform::identity())?;
         let ncolors = figure.colors.clamp(1, colors.len());
-        for placement in plane.placements(figure, 12.0, 12.0) {
+        for placement in figure.placements(12.0, 12.0) {
             let t = placement.transform.then(m);
             pixmap.fill_path(
                 &tile,
@@ -173,12 +171,10 @@ mod tests {
     }
 
     #[test]
-    fn test_render_plane_fills_tiles() {
+    fn test_render_tiling_fills_tiles() {
         let f = TessellationFigure::square();
         let m = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
-        let image = Backend
-            .render_plane_to_image(&TessellationPlane {}, &f, &m)
-            .unwrap();
+        let image = Backend.render_tiling_to_image(&f, &m).unwrap();
         assert_eq!(image.get_data().len(), (WIDTH * HEIGHT * 4) as usize);
         // Inside a tile: one of the palette colours, not the white background.
         assert_ne!(pixel(image.as_ref(), 35, 35), [0xff, 0xff, 0xff, 0xff]);
