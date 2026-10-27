@@ -21,6 +21,8 @@ use tessellations::render::*;
 use tessellations::tessellationfigure::{TessellationFigure, FIGURE_IDS};
 use tessellations::tessellationline::PointIndexPath;
 
+// 4096 * 48 bytes = 196,608 bytes (192 KiB), well below the 128 MiB
+// storage-buffer minimum that wgpu guarantees, including on a Raspberry Pi.
 // Must match the primitive array length in shaders/geometry.vs.wgsl.
 const PRIM_BUFFER_LEN: usize = 4096;
 
@@ -143,8 +145,10 @@ fn main() {
     };
 
     let event_loop = EventLoop::new();
+    let title = TessellationFigure::title(figure_index);
+    println!("{title}");
     let window_builder = WindowBuilder::new()
-        .with_title(TessellationFigure::title(figure_index))
+        .with_title(title)
         .with_inner_size(scene.window_size);
     let window = window_builder.build(&event_loop).unwrap();
 
@@ -166,8 +170,10 @@ fn main() {
         &wgpu::DeviceDescriptor {
             label: None,
             features: wgpu::Features::default(),
-            //limits: wgpu::Limits::downlevel_defaults(), ## for raspberry pi
-            limits: wgpu::Limits::default(),
+            // Request exactly what this adapter supports, so the same binary
+            // works on desktop GPUs and Raspberry Pi 4 Vulkan (which cannot
+            // satisfy Limits::default()).
+            limits: adapter.limits(),
         },
         None,
     ))
@@ -758,13 +764,17 @@ fn update_inputs(
             VirtualKeyCode::N => {
                 *figure_index = (*figure_index + 1) % FIGURE_IDS.len();
                 figure.load(TessellationFigure::by_index(*figure_index));
-                window.set_title(&TessellationFigure::title(*figure_index));
+                let title = TessellationFigure::title(*figure_index);
+                window.set_title(&title);
+                println!("{title}");
                 window.request_redraw();
             }
             VirtualKeyCode::P => {
                 *figure_index = (*figure_index + FIGURE_IDS.len() - 1) % FIGURE_IDS.len();
                 figure.load(TessellationFigure::by_index(*figure_index));
-                window.set_title(&TessellationFigure::title(*figure_index));
+                let title = TessellationFigure::title(*figure_index);
+                window.set_title(&title);
+                println!("{title}");
                 window.request_redraw();
             }
             VirtualKeyCode::R => {

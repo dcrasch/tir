@@ -15,8 +15,9 @@ All 35 symmetries from
 Heesch code, isohedral type (IH), wallpaper group and colour count of each one.
 
 In `tir`, press `n` for the next figure and `p` for the previous one. The window
-title shows the figure name and Heesch code, e.g.
-`Tessellations of Squares with 4-way rotation (C4C4C4C4)`.
+title shows the figure name, Heesch code, isohedral (IH) type and wallpaper
+group, e.g.
+`Tessellations of Squares with 4-way rotation (C4C4C4C4, IH 55, p4)`.
 
 Every figure is checked by `tessellations/tests/test_grid.rs`, which verifies
 that the generated tiling covers a sampled area exactly once (no gaps or

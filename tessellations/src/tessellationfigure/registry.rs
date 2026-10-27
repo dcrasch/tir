@@ -401,10 +401,13 @@ impl TessellationFigure {
     }
 
     /// Window title for the figure at `index`, e.g.
-    /// `"Tessellations of Hexagons (TTTTTT)"`.
+    /// `"Tessellations of Hexagons (TTTTTT, IH 1, p1)"`.
     pub fn title(index: usize) -> String {
         let info = &FIGURES[index % FIGURES.len()];
-        format!("Tessellations of {} ({})", info.name, info.heesch)
+        format!(
+            "Tessellations of {} ({}, IH {}, {})",
+            info.name, info.heesch, info.ih, info.group
+        )
     }
 }
 
@@ -431,7 +434,7 @@ mod tests {
         assert_eq!(FIGURE_IDS[0], "quad1");
         assert_eq!(
             TessellationFigure::title(0),
-            "Tessellations of Parallelograms (TTTT)"
+            "Tessellations of Parallelograms (TTTT, IH 41, p1)"
         );
     }
 
@@ -443,7 +446,7 @@ mod tests {
         );
         assert_eq!(
             TessellationFigure::title(1),
-            "Tessellations of Hexagons (TTTTTT)"
+            "Tessellations of Hexagons (TTTTTT, IH 1, p1)"
         );
     }
 
