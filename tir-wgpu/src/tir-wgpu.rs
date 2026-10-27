@@ -303,9 +303,12 @@ fn main() {
         primitive: wgpu::PrimitiveState {
             topology: wgpu::PrimitiveTopology::TriangleList,
             polygon_mode: wgpu::PolygonMode::Fill,
+            // Glide-reflected placements have a negative determinant, which
+            // reverses their triangle winding. Culling back faces would drop
+            // those tiles and leave white gaps in every flipped tiling.
             front_face: wgpu::FrontFace::Ccw,
             strip_index_format: None,
-            cull_mode: Some(wgpu::Face::Back),
+            cull_mode: None,
             conservative: false,
             unclipped_depth: false,
         },
