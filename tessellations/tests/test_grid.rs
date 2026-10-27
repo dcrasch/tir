@@ -144,6 +144,87 @@ mod tests {
         }
     }
 
+    /// Centroid of the prototile, matching the one used for the colour map.
+    fn base_centroid(f: &TessellationFigure) -> Point {
+        let mut n = 0usize;
+        let mut x = 0.0f32;
+        let mut y = 0.0f32;
+        for line in &f.lines {
+            if let Some(p) = line.points().first() {
+                x += p.x;
+                y += p.y;
+                n += 1;
+            }
+        }
+        Point::new(x / n as f32, y / n as f32)
+    }
+
+    /// Every tile's centroid identifies one `(aspect, t1, t2)` label, so the
+    /// colour map must colour all placements without falling back.
+    #[test]
+    fn test_colour_map_covers_every_tile() {
+        use tessellations::tessellationfigure::{color_map, color_table};
+        for (info, f) in FIGURES.iter().zip(TessellationFigure::all()) {
+            let table = color_table(info.ih).expect("colour table");
+            let map = color_map(info.ih).unwrap_or_else(|| panic!("{}: missing map", info.id));
+            let base = base_centroid(&f);
+            for (w, h) in [(6.0, 6.0), (20.0, 20.0)] {
+                for p in f.placements(w, h) {
+                    let expected = map
+                        .color(&p, table, base)
+                        .unwrap_or_else(|| panic!("{}: tile not classified", info.id));
+                    assert_eq!(p.color, expected, "{}: placement colour", info.id);
+                }
+            }
+        }
+    }
+
+    /// Adjacent tiles must have different colours. This catches a wrong
+    /// aspect/lattice label even when the number of colours is right.
+    #[test]
+    fn test_colouring_is_proper() {
+        use std::collections::HashMap;
+
+        let key = |a: Point, b: Point| {
+            let r = |v: f32| (v * 1000.0).round() as i64;
+            let (a, b) = ((r(a.x), r(a.y)), (r(b.x), r(b.y)));
+            if a <= b {
+                (a.0, a.1, b.0, b.1)
+            } else {
+                (b.0, b.1, a.0, a.1)
+            }
+        };
+
+        let mut failures = Vec::new();
+        for (info, f) in FIGURES.iter().zip(TessellationFigure::all()) {
+            let placements = f.placements(6.0, 6.0);
+            let mut edges: HashMap<(i64, i64, i64, i64), (usize, usize)> = HashMap::new();
+            for (i, p) in placements.iter().enumerate() {
+                for line in &f.lines {
+                    let pts = line.points();
+                    let (Some(&a), Some(&b)) = (pts.first(), pts.last()) else {
+                        continue;
+                    };
+                    let (a, b) = (
+                        p.transform.transform_point(a),
+                        p.transform.transform_point(b),
+                    );
+                    if a == b {
+                        continue;
+                    }
+                    if let Some(&(j, color)) = edges.get(&key(a, b)) {
+                        if j != i && color == p.color {
+                            failures.push(format!("{}: tiles {i} and {j} share colour", info.id));
+                        }
+                    } else {
+                        edges.insert(key(a, b), (i, p.color));
+                    }
+                }
+            }
+        }
+        assert!(failures.is_empty(), "{}", failures.join("\n"));
+    }
+
     #[test]
     fn test_isohedral_type_survives_serde() {
         for f in TessellationFigure::all() {

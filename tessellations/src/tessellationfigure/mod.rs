@@ -1,4 +1,5 @@
 mod coloring;
+mod colormap;
 mod figure;
 mod plane;
 mod registry;
@@ -6,6 +7,7 @@ mod spec;
 mod tiles;
 
 pub use coloring::{color_table, ColorTable};
+pub use colormap::{color_map, ColorMap};
 pub use figure::{EdgeLink, Placement, TessellationFigure};
 pub use plane::TessellationPlane;
 pub use registry::{FigureInfo, FIGURES, FIGURE_IDS};

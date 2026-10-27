@@ -1,4 +1,5 @@
 use crate::tessellationfigure::coloring::{color_table, ColorTable};
+use crate::tessellationfigure::colormap::color_map;
 use crate::tessellationline::{Point, PointIndexPath, TessellationLine, Transform};
 use crate::tessellationshape::TessellationShape;
 use serde::{Deserialize, Serialize};
@@ -362,26 +363,57 @@ impl TessellationFigure {
             p.color = p.orientation % self.colors.max(1);
         }
 
-        // Use the tactile-rs colouring for this tiling type, if known. It colours
-        // each tile from its aspect and its position on the lattice, giving the
-        // familiar balanced patterns of the isohedral tilings.
-        if let Some(table) = self.ih.and_then(color_table) {
-            color_by_lattice(&mut result, table);
-        } else if result.len() > 1
-            && result
-                .iter()
-                .all(|p| p.orientation == result[0].orientation)
+        // Use the tactile-rs colouring for this tiling type, if known. The
+        // centroid of each tile identifies its aspect and its integer
+        // coordinates on the translation lattice, which stays unambiguous even
+        // for prototiles with internal symmetries.
+        let base = self
+            .lines
+            .iter()
+            .filter_map(|line| line.points().first().copied())
+            .fold((0.0f32, 0.0f32, 0usize), |(x, y, n), p| {
+                (x + p.x, y + p.y, n + 1)
+            });
+        let base = if base.2 == 0 {
+            Point::origin()
+        } else {
+            Point::new(base.0 / base.2 as f32, base.1 / base.2 as f32)
+        };
+        let mut mapped = false;
+        if let (Some(table), Some(map)) =
+            (self.ih.and_then(color_table), self.ih.and_then(color_map))
         {
-            // Translation-only tilings have a single orientation; colour them by
-            // lattice parity so neighbouring tiles differ.
-            if let Some((t1, t2)) = lattice(&result) {
-                let det = t1.0 * t2.1 - t1.1 * t2.0;
-                let n = self.colors.max(1) as f32;
-                for p in &mut result {
-                    let (x, y) = (p.transform.m31, p.transform.m32);
-                    let i = (x * t2.1 - y * t2.0) / det;
-                    let j = (-x * t1.1 + y * t1.0) / det;
-                    p.color = ((i + j).round().rem_euclid(n)) as usize;
+            mapped = result.iter_mut().all(|p| {
+                if let Some(color) = map.color(p, table, base) {
+                    p.color = color;
+                    true
+                } else {
+                    false
+                }
+            });
+        }
+
+        // Fall back to the orientation/lattice approximation for figures
+        // without tactile data, or if an edited tile no longer matches it.
+        if !mapped {
+            if let Some(table) = self.ih.and_then(color_table) {
+                color_by_lattice(&mut result, table);
+            } else if result.len() > 1
+                && result
+                    .iter()
+                    .all(|p| p.orientation == result[0].orientation)
+            {
+                // Translation-only tilings have a single orientation; colour
+                // them by lattice parity so neighbouring tiles differ.
+                if let Some((t1, t2)) = lattice(&result) {
+                    let det = t1.0 * t2.1 - t1.1 * t2.0;
+                    let n = self.colors.max(1) as f32;
+                    for p in &mut result {
+                        let (x, y) = (p.transform.m31, p.transform.m32);
+                        let i = (x * t2.1 - y * t2.0) / det;
+                        let j = (-x * t1.1 + y * t1.0) / det;
+                        p.color = ((i + j).round().rem_euclid(n)) as usize;
+                    }
                 }
             }
         }
