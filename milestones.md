@@ -137,8 +137,6 @@ must pass.
       `triangle` figures to the new model.
 - [x] Generalise `tests/test_grid.rs::test_grid_covers_area_exactly_once` to use the
       aspect transforms (incl. reflections) and run it for every figure.
-- [ ] New test helper: for every derived edge, check that the transformed source edge
-      coincides with the neighbouring tile's edge (edges match after editing a point).
 - [x] Add a `TessellationFigure::all()` / registry (id, name, Heesch, IH, group)
       so UIs and tests iterate over one list.
 - [x] Small fixes: doc comment of `diamond()` says "hexagon";
