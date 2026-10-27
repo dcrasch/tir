@@ -57,11 +57,16 @@ all 35 with `n`/`p`; the title shows
 `Tessellations of {name} ({Heesch}, IH {ih}, {group})`. The old standalone
 `brick()` and `TessellationPlane` helpers have been removed.
 
-`tir-wgpu` uses four ceramic colours sampled from the Alhambra "Brilliant"
-palette (Amalfi, Capri, Canary and Denim), applies a subtle screen-space grain,
-and cycles the colour assignment with `r`. Its primitive buffer holds the
-densest tiling (`tri6tip`, 2573 placements), and back-face culling is disabled
-because reflected placements reverse triangle winding.
+`tir-web` adds a **Tile** menu that lists all 35 figures grouped by shape
+(`figure_groups()`), and a **Colours** menu for the Alhambra, Classic and
+Grayscale palettes (`c` cycles them). The palettes live in
+`tessellations/src/render/palette.rs` and are shared with `tir-wgpu`.
+
+`tir-wgpu` uses the Alhambra palette (Amalfi, Capri, Canary and Denim), applies
+a subtle screen-space grain, and cycles the colour assignment with `r`. Its
+primitive buffer holds the densest tiling (`tri6tip`, 2573 placements), and
+back-face culling is disabled because reflected placements reverse triangle
+winding.
 
 ### What changed from the original model
 
@@ -77,6 +82,11 @@ because reflected placements reverse triangle winding.
   without an IH type).
 - Figures can carry inner mirror axes (`from_polygon_with_mirrors`), which are
   propagated to edited points but never create extra tiles.
+- `FigureInfo` separates the tile `shape` from the `variant`, and
+  `figure_groups()` groups the figures by shape (each group and its variants
+  ordered by IH) for a grouped tile picker.
+- Render palettes are shared data (`render/palette.rs`): `ALHAMBRA`, `CLASSIC`,
+  `GRAYSCALE` and `PALETTES`, with `DEFAULT_PALETTE` set to Alhambra.
 - `tir-wgpu` renders both tile orientations: reflections have a negative
   determinant and would otherwise be culled as back faces. The primitive buffer
   is large enough for the densest tiling, and the shader uses the Alhambra
@@ -84,9 +94,9 @@ because reflected placements reverse triangle winding.
 
 ### Verification
 
-As of `43a67cf`, these are clean:
+Latest verification (the tile picker and palette work in the working tree):
 
-- `cargo test --workspace` (24 core, 11 grid, 11 line, 2 `tir-wgpu` tests)
+- `cargo test --workspace` (35 core, 11 grid, 11 line, 1 `tir-wgpu` test)
 - `cargo clippy --workspace --all-targets -- -D warnings`
 - `cargo build --workspace`
 - `cargo check -p tir-web --target wasm32-unknown-unknown`
@@ -249,13 +259,20 @@ After this milestone all 35 symmetries are done.
       buffer, reflected tiles are not culled, and 2-/3-colour tilings get
       distinct Alhambra palette colours.
 - [x] Add a subtle grain to the `tir-wgpu` fragment shader.
-- [ ] Figure picker with grouping by wallpaper group or Mohr type.
+- [x] Share palettes between the renderers (`render/palette.rs`): Alhambra,
+      Classic and Grayscale. `tir-web` has a **Colours** menu and `c` cycles
+      them; `tir-wgpu` starts on Alhambra and `r` rotates it.
+- [x] Tile picker in `tir-web`: a **Tile** menu lists all 35 figures grouped by
+      shape (`figure_groups()`), ordered by lowest IH and then by variant IH.
+      Each entry shows name, Heesch, IH and group. `tir` and `tir-wgpu` still
+      cycle with `n`/`p`.
 - [ ] Non-rigid types: allow moving base-polygon vertices (within the
       constraints of the type) instead of only edge points.
-- [ ] Rebuild `docs/` (web demo) with all figures. The checked-in `docs/`
-      bundle predates the all-35 work.
-- [ ] README: add the full supported-symmetry table (the JSON format, title and
-      `tir-wgpu` palette notes are done; tiled.art is linked).
+- [x] Rebuild `docs/` (web demo) with all figures; the new bundle includes the
+      **Tile** and **Colours** menus.
+- [ ] README: add the full supported-symmetry table (the JSON format, title,
+      `tir-web` menus and `tir-wgpu` palette notes are done; tiled.art is
+      linked).
 - [ ] Publish a new `tessellations` crate version (breaking change from Milestone 0).
 
 ---
