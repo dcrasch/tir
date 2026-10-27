@@ -270,9 +270,9 @@ After this milestone all 35 symmetries are done.
       constraints of the type) instead of only edge points.
 - [x] Rebuild `docs/` (web demo) with all figures; the new bundle includes the
       **Tile** and **Colours** menus.
-- [ ] README: add the full supported-symmetry table (the JSON format, title,
-      `tir-web` menus and `tir-wgpu` palette notes are done; tiled.art is
-      linked).
+- [x] README: full supported-symmetry table (id, tile name, Heesch, IH, group
+      and colour count for all 35 figures), alongside the existing JSON format,
+      title, `tir-web` menu and `tir-wgpu` palette notes.
 - [ ] Publish a new `tessellations` crate version (breaking change from Milestone 0).
 
 ---

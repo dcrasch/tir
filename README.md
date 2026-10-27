@@ -13,15 +13,56 @@ All 35 symmetries from
 (28 Heesch types plus 7 types with an inner mirror). The figures live in
 `tessellations/src/tessellationfigure/`; `registry.rs` holds the id, name,
 Heesch code, isohedral type (IH), wallpaper group and colour count of each one.
+The full list, in registry order:
+
+| id | Tile | Heesch | IH | Group | Colours |
+|---|---|---|---|---|---|
+| `quad1` | Parallelograms | TTTT | 41 | p1 | 2 |
+| `hex1` | Hexagons | TTTTTT | 1 | p1 | 3 |
+| `tri2` | Triangles, rotated | CCC | 84 | p2 | 2 |
+| `quad2edge` | Parallelograms, rotated | TCTC | 47 | p2 | 2 |
+| `quad2tip` | Quadrilaterals, rotated | CCCC | 46 | p2 | 2 |
+| `pent2` | Pentagons, rotated | TCTCC | 23 | p2 | 3 |
+| `hex2` | Hexagons, rotated | TCCTCC | 4 | p2 | 3 |
+| `quad3` | Rhombuses, 3-way rotation | C3C3C3C3 | 33 | p3 | 3 |
+| `hex3` | Hexagons, 3-way rotation | C3C3C3C3C3C3 | 7 | p3 | 3 |
+| `tri4` | Triangles, 4-way rotation | CC4C4 | 79 | p4 | 2 |
+| `quad4` | Squares, 4-way rotation | C4C4C4C4 | 55 | p4 | 2 |
+| `pent4` | Pentagons, 4-way rotation | CC4C4C4C4 | 28 | p4 | 3 |
+| `tri6alone` | Equilateral triangles, 6-way rotation | CC6C6 | 88 | p6 | 2 |
+| `tri6tip` | Isosceles triangles, 6-way rotation | CC3C3 | 39 | p6 | 3 |
+| `quad6` | Kites, 6-way rotation | C3C3C6C6 | 31 | p6 | 3 |
+| `pent6` | Pentagons, 6-way rotation | CC3C3C6C6 | 21 | p6 | 3 |
+| `quad2flipedge` | Parallelograms, flipped | TGTG | 43 | pg | 2 |
+| `quad2fliptip` | Kites, flipped | G1G1G2G2 | 44 | pg | 2 |
+| `hex2flipend` | Hexagons, flipped (on perpendicular axis) | TG1G2TG2G1 | 3 | pg | 3 |
+| `hex2flipsides` | Hexagons, flipped (on parallel axis) | TG1G1TG2G2 | 2 | pg | 3 |
+| `tri4flip` | Triangles, rotated and flipped | CGG | 86 | pgg | 2 |
+| `quad4fliptip` | Quadrilaterals, touching, rotated and flipped | CCGG | 53 | pgg | 2 |
+| `quad4flipalonerotate` | Quadrilaterals, isolated, rotated and flipped | CGCG | 51 | pgg | 2 |
+| `quad4flipaloneflip` | Rectangles, 2-way flip | G1G2G1G2 | 52 | pgg | 2 |
+| `pent4flipedge` | Pentagons, rotated and flipped | TCTGG | 25 | pgg | 3 |
+| `pent4flipalone` | Pentagons, 2-way flip | CG1G2G1G2 | 27 | pgg | 3 |
+| `hex4flipedge` | Hexagons, rotated and flipped | TCCTGG | 5 | pgg | 3 |
+| `hex4flipalone` | Hexagons, 2-way flip | CG1CG2G1G2 | 6 | pgg | 3 |
+| `quad1sym` | Rhombuses, with inner mirror | TT\|TT | 68 | cm | 2 |
+| `hex1sym` | Hexagons, with inner mirror | tTTtTT | 12 | cm | 3 |
+| `quad2edgesym` | Rectangles, with inner mirror, rotated | tCtC | 66 | pmg | 2 |
+| `quad2tipsym` | Kites, with inner mirror, rotated | CC\|CC | 69 | pmg | 2 |
+| `hex2sym` | Hexagons, with inner mirror, rotated | tCCtCC | 13 | pmg | 3 |
+| `quad3sym` | Rhombuses, with inner mirror and 3-way rotation | C3C3\|C3C3 | 36 | p31m | 3 |
+| `quad4sym` | Squares, with inner mirror and 4-way rotation | C4C4\|C4C4 | 71 | p4g | 2 |
 
 In `tir`, press `n` for the next figure and `p` for the previous one. The window
 title shows the figure name, Heesch code, isohedral (IH) type and wallpaper
 group, e.g.
-`Tessellations of Squares with 4-way rotation (C4C4C4C4, IH 55, p4)`.
+`Tessellations of Squares, 4-way rotation (C4C4C4C4, IH 55, p4)`.
 
-`tir-wgpu` uses four ceramic colours sampled from the Alhambra "Brilliant"
-palette (Amalfi, Capri, Canary and Denim) and a subtle screen-space grain.
-Press `r` there to cycle the colour assignment.
+`tir-web` and `tir-wgpu` use four ceramic colours sampled from the Alhambra
+"Brilliant" palette (Amalfi, Capri, Canary and Denim); `tir-wgpu` adds a subtle
+screen-space grain. Press `r` in `tir-wgpu` or `c` in `tir-web` to cycle the
+colour assignment. The web version also has a **Colours** menu with the classic
+red/green/blue/black colours and a grayscale palette.
 
 Every figure is checked by `tessellations/tests/test_grid.rs`, which verifies
 that the generated tiling covers a sampled area exactly once (no gaps or
@@ -120,4 +161,4 @@ This code is distributed under a GPL v3 style license, see the LICENSE file for 
 
 ## Copyright
 
-Tessellation in Rust Copyright (c) 2022 David Rasch
+Tessellation in Rust Copyright (c) 2022-2026 David Rasch
