@@ -52,8 +52,16 @@ All 35 symmetries are implemented in
 | `quad4sym` | Squares, with inner mirror and 4-way rotation | C4C4\|C4C4 | 71 | p4g |
 
 The 35 symmetries in the table above are all reachable from the app's figure
-registry. The old standalone `brick()` and `TessellationPlane` helpers have been
-removed.
+registry. `tir`, `tir-web` and `tir-wgpu` start on the square and cycle through
+all 35 with `n`/`p`; the title shows
+`Tessellations of {name} ({Heesch}, IH {ih}, {group})`. The old standalone
+`brick()` and `TessellationPlane` helpers have been removed.
+
+`tir-wgpu` uses four ceramic colours sampled from the Alhambra "Brilliant"
+palette (Amalfi, Capri, Canary and Denim), applies a subtle screen-space grain,
+and cycles the colour assignment with `r`. Its primitive buffer holds the
+densest tiling (`tri6tip`, 2573 placements), and back-face culling is disabled
+because reflected placements reverse triangle winding.
 
 ### What changed from the original model
 
@@ -69,6 +77,20 @@ removed.
   without an IH type).
 - Figures can carry inner mirror axes (`from_polygon_with_mirrors`), which are
   propagated to edited points but never create extra tiles.
+- `tir-wgpu` renders both tile orientations: reflections have a negative
+  determinant and would otherwise be culled as back faces. The primitive buffer
+  is large enough for the densest tiling, and the shader uses the Alhambra
+  palette plus a subtle grain.
+
+### Verification
+
+As of `43a67cf`, these are clean:
+
+- `cargo test --workspace` (24 core, 11 grid, 11 line, 2 `tir-wgpu` tests)
+- `cargo clippy --workspace --all-targets -- -D warnings`
+- `cargo build --workspace`
+- `cargo check -p tir-web --target wasm32-unknown-unknown`
+- `cargo fmt --all -- --check`
 
 ---
 
@@ -214,21 +236,26 @@ After this milestone all 35 symmetries are done.
 
 ---
 
-## Milestone 6 – UI, editing of base polygons, docs
+## Milestone 6 – UI, render polish, editing of base polygons, docs
 
-- [x] Figure cycling in `tir` and `tir-web` driven by the registry: `n` / `p`
-      step forwards/backwards through all 35.
+- [x] Figure cycling in `tir`, `tir-web` and `tir-wgpu` driven by the registry:
+      `n` / `p` step forwards/backwards through all 35. All three start on the
+      square.
 - [x] Edge editing keeps paired and mirrored edges in sync; dragging an
       existing point moves its copies instead of adding new points.
-- [ ] Figure cycling in `tir-wgpu` (currently starts on `triangle()`).
-- [ ] Show IH number and wallpaper group in the window title as well
-      (currently the title shows name and Heesch code).
+- [x] Show the Heesch code, IH number and wallpaper group in the window title
+      (and print the same line from `tir-wgpu`).
+- [x] `tir-wgpu` fixes for the full registry: dense tilings fit the primitive
+      buffer, reflected tiles are not culled, and 2-/3-colour tilings get
+      distinct Alhambra palette colours.
+- [x] Add a subtle grain to the `tir-wgpu` fragment shader.
 - [ ] Figure picker with grouping by wallpaper group or Mohr type.
 - [ ] Non-rigid types: allow moving base-polygon vertices (within the
       constraints of the type) instead of only edge points.
-- [ ] Rebuild `docs/` (web demo) with all figures.
-- [ ] README: update TODO list, add a table of supported symmetries,
-      link to tiled.art.
+- [ ] Rebuild `docs/` (web demo) with all figures. The checked-in `docs/`
+      bundle predates the all-35 work.
+- [ ] README: add the full supported-symmetry table (the JSON format, title and
+      `tir-wgpu` palette notes are done; tiled.art is linked).
 - [ ] Publish a new `tessellations` crate version (breaking change from Milestone 0).
 
 ---
@@ -244,7 +271,7 @@ After this milestone all 35 symmetries are done.
 | M3 – pg | Quad2FlipEdge, Quad2FlipTip, Hex2FlipEnds, Hex2FlipSides | 20 / 35 |
 | M4 – pgg | Tri4Flip, Quad4FlipTip, Quad4FlipAloneRotate, Quad4FlipAloneFlip, Pent4FlipEdge, Pent4FlipAlone, Hex4FlipEdge, Hex4FlipAlone | 28 / 35 |
 | M5 – mirror | Quad1Sym, Hex1Sym, Quad2EdgeSym, Quad2TipSym, Hex2Sym, Quad3Sym, Quad4Sym | 35 / 35 |
-| M6 – UI & docs | – | 35 / 35 |
+| M6 – UI, render polish & docs | – | 35 / 35 |
 
 ## References
 
