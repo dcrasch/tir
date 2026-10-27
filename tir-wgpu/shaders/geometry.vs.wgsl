@@ -13,7 +13,7 @@ struct Primitive {
 };
 
 struct Primitives {
-    primitives: array<Primitive, 1356>,
+    primitives: array<Primitive, 4096>,
 };
 
 @group(0) @binding(0) var<uniform> globals: Globals;

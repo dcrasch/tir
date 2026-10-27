@@ -21,7 +21,8 @@ use tessellations::render::*;
 use tessellations::tessellationfigure::{TessellationFigure, FIGURE_IDS};
 use tessellations::tessellationline::PointIndexPath;
 
-const PRIM_BUFFER_LEN: usize = 1356;
+// Must match the primitive array length in shaders/geometry.vs.wgsl.
+const PRIM_BUFFER_LEN: usize = 4096;
 
 #[repr(C)]
 #[derive(Copy, Clone)]
@@ -836,4 +837,23 @@ fn generate_palette() -> Vec<Srgb<f32>> {
     let complementary_color = Hsl::new(complementary_hue, 0.7, 0.6).into_format();
     palette.push(Srgb::from_color(complementary_color));
     palette
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn all_figures_fit_in_the_primitive_buffer() {
+        // `build_tiling` requests a 16 x 16 area, plus one primitive for the
+        // edited figure itself.
+        for (index, id) in FIGURE_IDS.iter().enumerate() {
+            let figure = TessellationFigure::by_index(index);
+            let primitives = 1 + figure.placements(16.0, 16.0).len();
+            assert!(
+                primitives <= PRIM_BUFFER_LEN,
+                "{id} needs {primitives} primitives, buffer holds {PRIM_BUFFER_LEN}"
+            );
+        }
+    }
 }
