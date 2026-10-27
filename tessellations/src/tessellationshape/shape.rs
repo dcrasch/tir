@@ -1,15 +1,10 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Default, Serialize, Deserialize)]
 pub enum TessellationShape {
+    #[default]
     S,
     U,
     I,
     J,
-}
-
-impl Default for TessellationShape {
-    fn default() -> Self {
-        TessellationShape::S
-    }
 }

@@ -10,7 +10,7 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use tessellations::render::*;
-use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
+use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane, FIGURE_IDS};
 use tessellations::tessellationline::{Point, PointIndexPath, Transform};
 
 pub fn draw(ctx: &web_sys::HtmlElement, _: u32, _: u32, f: &TessellationFigure) {
@@ -36,7 +36,8 @@ fn app(name: &str) -> Result<(), JsValue> {
     let m1: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
     let mi = m1.inverse().unwrap();
     let figure: Rc<RefCell<TessellationFigure>> =
-        Rc::new(RefCell::new(TessellationFigure::triangle()));
+        Rc::new(RefCell::new(TessellationFigure::by_index(0)));
+    let figure_index = Rc::new(Cell::new(0usize));
     let selected_point_index: Rc<Cell<Option<PointIndexPath>>> = Rc::new(Cell::new(None));
 
     let context = Rc::new(context);
@@ -100,7 +101,6 @@ fn app(name: &str) -> Result<(), JsValue> {
     }
 
     {
-        let pressed = pressed;
         let closure = Closure::wrap(Box::new(move |_event: web_sys::MouseEvent| {
             pressed.set(false);
         }) as Box<dyn FnMut(_)>);
@@ -111,12 +111,19 @@ fn app(name: &str) -> Result<(), JsValue> {
     {
         let context = context.clone();
         let figure_cloned = figure.clone();
+        let index = figure_index.clone();
         let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
             let mut f = figure_cloned.borrow_mut();
-            if event.key() == "1" {
-                f.load(TessellationFigure::brick());
-            } else if event.key() == "2" {
-                f.load(TessellationFigure::triangle());
+            let mut i = index.get();
+            match event.key().as_str() {
+                "n" => i = (i + 1) % FIGURE_IDS.len(),
+                "p" => i = (i + FIGURE_IDS.len() - 1) % FIGURE_IDS.len(),
+                _ => return,
+            }
+            index.set(i);
+            f.load(TessellationFigure::by_index(i));
+            if let Some(document) = web_sys::window().and_then(|w| w.document()) {
+                document.set_title(&TessellationFigure::title(i));
             }
             draw(&context, 400, 400, &f);
         }) as Box<dyn FnMut(_)>);

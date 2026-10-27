@@ -54,10 +54,8 @@ struct Primitive {
     translate: [f32; 2],
     z_index: i32,
     width: f32,
-    angle: f32,
-    scale: f32,
-    _pad1: i32,
-    _pad2: i32,
+    /// Linear part of the placement: rotation, reflection and scale.
+    matrix: [f32; 4],
 }
 
 impl Primitive {
@@ -66,10 +64,7 @@ impl Primitive {
         translate: [0.0; 2],
         z_index: 0,
         width: 0.0,
-        angle: 0.0,
-        scale: 1.0,
-        _pad1: 0,
-        _pad2: 0,
+        matrix: [1.0, 0.0, 0.0, 1.0],
     };
 }
 
@@ -201,8 +196,6 @@ fn main() {
         mapped_at_creation: false,
     });
 
-
-
     let vs_module = &device.create_shader_module(wgpu::ShaderModuleDescriptor {
         label: Some("Geometry vs"),
         source: wgpu::ShaderSource::Wgsl(include_str!("./../shaders/geometry.vs.wgsl").into()),
@@ -229,7 +222,7 @@ fn main() {
                 binding: 1,
                 visibility: wgpu::ShaderStages::VERTEX,
                 ty: wgpu::BindingType::Buffer {
-                    ty: wgpu::BufferBindingType::Storage {read_only:true},
+                    ty: wgpu::BufferBindingType::Storage { read_only: true },
                     has_dynamic_offset: false,
                     min_binding_size: wgpu::BufferSize::new(prim_buffer_byte_size),
                 },
@@ -459,8 +452,7 @@ fn main() {
                 z_index: 0,
                 width: 0.0,
                 translate: [0.0, 0.0],
-                angle: 0.0,
-                ..Primitive::DEFAULT
+                matrix: [1.0, 0.0, 0.0, 1.0],
             });
         }
 
@@ -469,7 +461,7 @@ fn main() {
             color: [0.0, 0.0, 0.0, 1.0],
             z_index: 1,
             width: scene.stroke_width,
-            scale: 100.0,
+            matrix: [100.0, 0.0, 0.0, 100.0],
             ..Primitive::DEFAULT
         };
 
@@ -485,10 +477,14 @@ fn main() {
             for (i, p) in grid.iter().enumerate() {
                 cpu_primitives[fill_prim_id + i] = Primitive {
                     color: [p.r, p.g, p.b, 1.0],
-                    translate: [p.x * 100.0 -100.0, p.y * 100.0],
+                    translate: [p.x * 100.0 - 100.0, p.y * 100.0],
                     z_index: 1,
-                    angle: p.angle,
-                    scale: 100.0,
+                    matrix: [
+                        p.matrix[0] * 100.0,
+                        p.matrix[1] * 100.0,
+                        p.matrix[2] * 100.0,
+                        p.matrix[3] * 100.0,
+                    ],
                     ..Primitive::DEFAULT
                 };
             }
@@ -814,7 +810,7 @@ fn update_inputs(
                 let m: Transform =
                     Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
 
-                let svg = svgbackend.compose_plane(&p, &figure, &m).unwrap();
+                let svg = svgbackend.compose_plane(&p, figure, &m).unwrap();
                 svg.save_svg(std::path::Path::new("out.svg"));
             }
             VirtualKeyCode::Key1 => {
@@ -883,5 +879,5 @@ fn generate_palette() -> Vec<Srgb<f32>> {
     let complementary_hue = (base_hue + 180.0) % 360.0;
     let complementary_color = Hsl::new(complementary_hue, 0.7, 0.6).into_format();
     palette.push(Srgb::from_color(complementary_color));
-    return palette;
+    palette
 }

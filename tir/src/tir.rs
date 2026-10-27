@@ -10,7 +10,7 @@ use winit::{
 use winit_input_helper::WinitInputHelper;
 
 use tessellations::render::*;
-use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane};
+use tessellations::tessellationfigure::{TessellationFigure, TessellationPlane, FIGURE_IDS};
 use tessellations::tessellationline::{Point, PointIndexPath, Transform};
 
 const WIDTH: u32 = 400;
@@ -19,10 +19,12 @@ const HEIGHT: u32 = 400;
 fn main() -> Result<(), Error> {
     let event_loop = EventLoop::new();
     let mut input = WinitInputHelper::new();
+    let mut f = TessellationFigure::square();
+    let mut figure_index = 0usize;
     let window = {
         let size = LogicalSize::new(WIDTH as f64, HEIGHT as f64);
         WindowBuilder::new()
-            .with_title("Hello Tessellations")
+            .with_title(TessellationFigure::title(figure_index))
             .with_inner_size(size)
             .with_min_inner_size(size)
             .build(&event_loop)
@@ -33,7 +35,6 @@ fn main() -> Result<(), Error> {
         let surface_texture = SurfaceTexture::new(window_size.width, window_size.height, &window);
         Pixels::new(WIDTH, HEIGHT, surface_texture)?
     };
-    let mut f = TessellationFigure::square();
     let p = TessellationPlane {};
     let backend = Box::new(Backend);
     let svgbackend = Box::new(SVGBackend);
@@ -83,28 +84,16 @@ fn main() -> Result<(), Error> {
                 let svg = svgbackend.compose_plane(&p, &f, &m).unwrap();
                 svg.save_svg(std::path::Path::new("out.svg"));
             }
-            if input.key_pressed(VirtualKeyCode::Key1) {
-                f = TessellationFigure::square();
+            if input.key_pressed(VirtualKeyCode::N) {
+                figure_index = (figure_index + 1) % FIGURE_IDS.len();
+                f.load(TessellationFigure::by_index(figure_index));
+                window.set_title(&TessellationFigure::title(figure_index));
                 window.request_redraw();
             }
-            if input.key_pressed(VirtualKeyCode::Key2) {
-                f = TessellationFigure::triangle();
-                window.request_redraw();
-            }
-            if input.key_pressed(VirtualKeyCode::Key3) {
-                f = TessellationFigure::square90();
-                window.request_redraw();
-            }
-            if input.key_pressed(VirtualKeyCode::Key4) {
-                f = TessellationFigure::diamond();
-                window.request_redraw();
-            }
-            if input.key_pressed(VirtualKeyCode::Key5) {
-                f = TessellationFigure::brick();
-                window.request_redraw();
-            }
-            if input.key_pressed(VirtualKeyCode::Key6) {
-                f = TessellationFigure::hexagon();
+            if input.key_pressed(VirtualKeyCode::P) {
+                figure_index = (figure_index + FIGURE_IDS.len() - 1) % FIGURE_IDS.len();
+                f.load(TessellationFigure::by_index(figure_index));
+                window.set_title(&TessellationFigure::title(figure_index));
                 window.request_redraw();
             }
 

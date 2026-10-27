@@ -9,10 +9,7 @@ struct Primitive {
     translate: vec2<f32>,
     z_index: i32,
     width: f32,
-    angle: f32,
-    scale: f32,
-    pad1: i32,
-    pad2: i32,
+    matrix: vec4<f32>,
 };
 
 struct Primitives {
@@ -38,12 +35,13 @@ fn main(
 
     var invert_y = vec2<f32>(1.0, -1.0);
 
-    var rotation = mat2x2<f32>(
-        vec2<f32>(cos(prim.angle), -sin(prim.angle)),
-        vec2<f32>(sin(prim.angle), cos(prim.angle))
+    // Columns of the linear part: rotation, reflection and scale.
+    var linear = mat2x2<f32>(
+        vec2<f32>(prim.matrix.x, prim.matrix.y),
+        vec2<f32>(prim.matrix.z, prim.matrix.w)
     );
 
-    var local_pos = (a_position * prim.scale + a_normal * prim.width) * rotation;
+    var local_pos = linear * a_position + a_normal * prim.width;
     var world_pos = local_pos - globals.scroll_offset + prim.translate;
     var transformed_pos = world_pos * globals.zoom / (0.5 * globals.resolution) * invert_y;
 

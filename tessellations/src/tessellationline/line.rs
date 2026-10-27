@@ -50,7 +50,7 @@ pub m21: T, pub m22: T,
 pub m31: T, pub m32: T,
 */
 
-fn transform_serialize<S>(v: &Transform, s: S) -> Result<S::Ok, S::Error>
+pub(crate) fn transform_serialize<S>(v: &Transform, s: S) -> Result<S::Ok, S::Error>
 where
     S: Serializer,
 {
@@ -64,7 +64,7 @@ where
     ts.end()
 }
 
-fn transform_deserialize<'de, D>(d: D) -> Result<Transform, D::Error>
+pub(crate) fn transform_deserialize<'de, D>(d: D) -> Result<Transform, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -103,12 +103,57 @@ impl TessellationLine {
         let transform = Transform::rotation(Angle::degrees(-angle)).then_translate(vec2(tx, ty));
         Self {
             points: Vec::<Point>::new(),
-            transform,
             ci: transform.inverse().unwrap(),
+            transform,
             angle,
             tx,
             ty,
         }
+    }
+
+    /// Line from an arbitrary isometry (rotation, translation, reflection or glide).
+    pub fn from_transform(transform: Transform) -> Self {
+        Self {
+            points: Vec::<Point>::new(),
+            transform,
+            ci: transform.inverse().unwrap(),
+            angle: 0.0,
+            tx: 0.0,
+            ty: 0.0,
+        }
+    }
+
+    /// Points of the line, including both shared endpoints.
+    pub fn points(&self) -> &[Point] {
+        &self.points
+    }
+
+    /// Index of the point closest to `p`, if the line has points.
+    pub fn nearest_index(&self, p: Point) -> Option<usize> {
+        let mut best: Option<(usize, f32)> = None;
+        for (i, &q) in self.points.iter().enumerate() {
+            let d = (q - p).square_length();
+            if best.is_none_or(|(_, bd)| d < bd) {
+                best = Some((i, d));
+            }
+        }
+        best.map(|(i, _)| i)
+    }
+
+    /// Position where a point at `p` belongs: just after the endpoint of the
+    /// nearest segment, so a copied point keeps its place in the polyline.
+    pub fn insertion_position(&self, p: Point) -> usize {
+        if self.points.len() < 2 {
+            return self.points.len();
+        }
+        let mut best = (0usize, f32::MAX);
+        for (i, w) in self.points.windows(2).enumerate() {
+            let d = segment_distance_sq(w[0], w[1], p);
+            if d < best.1 {
+                best = (i, d);
+            }
+        }
+        best.0 + 1
     }
 
     /// Append the `point` to the back of the points
@@ -222,6 +267,17 @@ fn hit(p1: Point, p2: Point, rectsize: f32) -> bool {
     (d.x < rectsize) && (d.x > -rectsize) && (d.y < rectsize) && (d.y > -rectsize)
 }
 
+/// Squared distance from `p` to the segment `a`-`b`.
+fn segment_distance_sq(a: Point, b: Point, p: Point) -> f32 {
+    let ab = b - a;
+    let len2 = ab.square_length();
+    if len2 <= 1e-12 {
+        return (p - a).square_length();
+    }
+    let t = ((p - a).dot(ab) / len2).clamp(0.0, 1.0);
+    (p - (a + ab * t)).square_length()
+}
+
 fn distance(p: Point) -> f32 {
     (p.x * p.x + p.y * p.y).sqrt()
 }
@@ -250,80 +306,62 @@ mod tests {
 
     #[test]
     fn test_breakline_on() {
-        assert_eq!(
-            breakline(
-                Point::new(0.0, 0.0),
-                Point::new(1.0, 0.0),
-                Point::new(0.5, 0.0),
-                0.1
-            ),
-            true
-        );
+        assert!(breakline(
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(0.5, 0.0),
+            0.1
+        ));
     }
 
     #[test]
     fn test_breakline_ontop() {
-        assert_eq!(
-            breakline(
-                Point::new(0.0, 0.0),
-                Point::new(1.0, 0.0),
-                Point::new(0.5, 0.05),
-                0.1
-            ),
-            true
-        );
+        assert!(breakline(
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(0.5, 0.05),
+            0.1
+        ));
     }
 
     #[test]
     fn test_breakline_offright() {
-        assert_eq!(
-            breakline(
-                Point::new(0.0, 0.0),
-                Point::new(1.0, 0.0),
-                Point::new(1.01, 0.0),
-                0.1
-            ),
-            false
-        );
+        assert!(!breakline(
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(1.01, 0.0),
+            0.1
+        ));
     }
 
     #[test]
     fn test_breakline_offleft() {
-        assert_eq!(
-            breakline(
-                Point::new(0.0, 0.0),
-                Point::new(1.0, 0.0),
-                Point::new(-0.05, 0.0),
-                0.1
-            ),
-            false
-        );
+        assert!(!breakline(
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(-0.05, 0.0),
+            0.1
+        ));
     }
 
     #[test]
     fn test_breakline_offmoreleft() {
-        assert_eq!(
-            breakline(
-                Point::new(0.0, 0.0),
-                Point::new(1.0, 0.0),
-                Point::new(-0.2, 0.0),
-                0.1
-            ),
-            false
-        );
+        assert!(!breakline(
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(-0.2, 0.0),
+            0.1
+        ));
     }
 
     #[test]
     fn test_breakline_offmoreright() {
-        assert_eq!(
-            breakline(
-                Point::new(0.0, 0.0),
-                Point::new(1.0, 0.0),
-                Point::new(1.2, 0.0),
-                0.1
-            ),
-            false
-        );
+        assert!(!breakline(
+            Point::new(0.0, 0.0),
+            Point::new(1.0, 0.0),
+            Point::new(1.2, 0.0),
+            0.1
+        ));
     }
 
     #[test]
@@ -348,12 +386,12 @@ mod tests {
 
     #[test]
     fn test_hitpoint() {
-        assert_eq!(hit(Point::new(0.0, 0.0), Point::new(0.0, 0.0), 5.0), true);
+        assert!(hit(Point::new(0.0, 0.0), Point::new(0.0, 0.0), 5.0));
     }
 
     #[test]
     fn test_misspoint() {
-        assert_eq!(hit(Point::new(0.0, 0.0), Point::new(10.0, 0.0), 5.0), false);
+        assert!(!hit(Point::new(0.0, 0.0), Point::new(10.0, 0.0), 5.0));
     }
 
     #[test]

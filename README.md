@@ -5,6 +5,26 @@ Tessellation In Rust.
 ![tessellations-minifb.png](https://github.com/dcrasch/tir/blob/master/tessellations-minifb.png?raw=true)
 
 Live view : https://dcrasch.github.io/tir/
+
+## Tessellation symmetries
+
+All 35 symmetries from
+[tiled.art's summary](https://tiled.art/en/symmetrySummary/) are supported
+(28 Heesch types plus 7 types with an inner mirror). The figures live in
+`tessellations/src/tessellationfigure/`; `registry.rs` holds the id, name,
+Heesch code, isohedral type (IH), wallpaper group and colour count of each one.
+
+In `tir`, press `n` for the next figure and `p` for the previous one. The window
+title shows the figure name and Heesch code, e.g.
+`Tessellations of Squares with 4-way rotation (C4C4C4C4)`.
+
+Every figure is checked by `tessellations/tests/test_grid.rs`, which verifies
+that the generated tiling covers a sampled area exactly once (no gaps or
+overlaps). Base polygons and edge pairings for the IH types follow
+[tactile-rs](https://github.com/abusch/tactile-rs/), and each figure is coloured
+with tactile's per-type colouring table (`coloring.rs`), giving the same balanced
+colour patterns as tactile.
+
 ## TODO
 
 - [x] Build simple ui with minifb
@@ -24,6 +44,8 @@ Live view : https://dcrasch.github.io/tir/
 ## Links
 
 * https://github.com/isohedral/tactile-js
+* https://github.com/abusch/tactile-rs
+* https://tiled.art/en/symmetrySummary/
 * https://github.com/DBraun/tactile-python
 * https://github.com/linebender/tiny-skia
 * https://github.com/nical/lyon

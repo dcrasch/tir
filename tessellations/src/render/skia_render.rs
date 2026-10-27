@@ -1,9 +1,6 @@
 use crate::tessellationfigure::{TessellationFigure, TessellationPlane};
 use crate::tessellationline::{Point, Transform};
-use euclid::Angle;
-use tiny_skia::{
-    Color, FillRule, LineCap, LineJoin, Paint, Path, PathBuilder, Pixmap, Stroke,
-};
+use tiny_skia::{Color, FillRule, LineCap, LineJoin, Paint, Path, PathBuilder, Pixmap, Stroke};
 
 const WIDTH: u32 = 400;
 const HEIGHT: u32 = 400;
@@ -107,41 +104,17 @@ impl Render for Backend {
         // white background
         pixmap.fill(Color::WHITE);
 
-        let mut row = 0;
-        let g = plane.grid(figure, 12.0, 12.0);
-        let mut c = 0;
-
-        for rotdiv in 1..=figure.rotdiv {
-            let angle = Angle::degrees(360.0 * (rotdiv as f32) / (figure.rotdiv as f32));
-
-            for gridrow in &g {
-                if !figure.is_reversed {
-                    c = row % 2; // use for brick
-                }
-                for gridpoint in gridrow {
-                    if figure.is_reversed {
-                        c = rotdiv - 1; // for diamond
-                    }
-                    if !figure.is_reversed && figure.gridincy < figure.gridincx {
-                        c = row % 3; // used for hexagon
-                    }
-
-                    let m = Transform::rotation(angle)
-                        .then_scale(70.0, 70.0)
-                        .then_translate(euclid::vec2(gridpoint.x * 70.0, gridpoint.y * 70.0));
-                    if let Some(path) = figure_path(figure, &m) {
-                        pixmap.fill_path(
-                            &path,
-                            &colors[(c % 4) as usize],
-                            FillRule::Winding,
-                            tiny_skia::Transform::identity(),
-                            None,
-                        );
-                    }
-                    c += 1;
-                }
-                row += 1;
-            }
+        let tile = figure_path(figure, &Transform::identity())?;
+        let ncolors = figure.colors.clamp(1, colors.len());
+        for placement in plane.placements(figure, 12.0, 12.0) {
+            let t = placement.transform.then(m);
+            pixmap.fill_path(
+                &tile,
+                &colors[placement.color % ncolors],
+                FillRule::Winding,
+                tiny_transform(&t),
+                None,
+            );
         }
 
         if let Some(path) = figure_path(figure, m) {
@@ -156,6 +129,11 @@ impl Render for Backend {
 
         Some(Box::new(pixmap))
     }
+}
+
+/// Convert a euclid transform to the tiny-skia row convention.
+fn tiny_transform(t: &Transform) -> tiny_skia::Transform {
+    tiny_skia::Transform::from_row(t.m11, t.m12, t.m21, t.m22, t.m31, t.m32)
 }
 
 pub trait OutputImage {

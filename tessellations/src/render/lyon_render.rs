@@ -1,5 +1,4 @@
 use crate::tessellationfigure::{TessellationFigure, TessellationPlane};
-use euclid::Angle;
 use lyon::math::point;
 use lyon::path::{Path, Polygon};
 use palette::Srgb;
@@ -42,41 +41,23 @@ impl Builder for LyonBackend {
         figure: &TessellationFigure,
         palette: &[Srgb],
     ) -> Vec<OutputPrimitive> {
-        let mut res: Vec<OutputPrimitive> = Vec::new();
-        let mut row = 0;
-        let g = plane.grid(figure, 16.0, 16.0);
-        let mut c = 0;
-        for rotdiv in 1..=figure.rotdiv {
-            let angle = Angle::degrees(360.0 * (rotdiv as f32) / (figure.rotdiv as f32));
-
-            for gridrow in &g {
-                if !figure.is_reversed {
-                    c = row % 2; // use for brick
+        let ncolors = figure.colors.clamp(1, palette.len());
+        plane
+            .placements(figure, 16.0, 16.0)
+            .into_iter()
+            .map(|p| {
+                let cc = palette[p.color % ncolors];
+                let t = p.transform;
+                OutputPrimitive {
+                    x: t.m31 - 4.0,
+                    y: t.m32,
+                    r: cc.red,
+                    g: cc.green,
+                    b: cc.blue,
+                    matrix: [t.m11, t.m12, t.m21, t.m22],
                 }
-                for gridpoint in gridrow {
-                    if figure.is_reversed {
-                        c = rotdiv - 1; // for diamond
-                    }
-                    if !figure.is_reversed && figure.gridincy < figure.gridincx {
-                        c = row % 3; // used for hexagon
-                    }
-
-                    let cc = palette[(c % 4) as usize];
-                    res.push(OutputPrimitive {
-                        x: gridpoint.x-4.0,
-                        y: gridpoint.y,
-                        r: cc.red,
-                        g: cc.green,
-                        b: cc.blue,
-                        angle: angle.radians,
-                    });
-
-                    c += 1;
-                }
-                row += 1;
-            }
-        }
-        res
+            })
+            .collect()
     }
 }
 
@@ -86,7 +67,8 @@ pub struct OutputPrimitive {
     pub r: f32,
     pub g: f32,
     pub b: f32,
-    pub angle: f32,
+    /// Linear part of the placement (rotation, reflection and scale).
+    pub matrix: [f32; 4],
 }
 
 #[cfg(test)]
@@ -101,7 +83,7 @@ mod tests {
         let shaders = LyonBackend.build(&f).unwrap();
         assert_eq!(
             format!("{:?}", shaders),
-            "\" M 0.0 0.0 L 0.0 1.0 L 1.0 1.0 L 1.0 0.0 Z\""
+            "\" M 0.0 0.0 L 1.0 0.0 L 1.0 1.0 L 0.0 1.0 Z\""
         );
     }
 }

@@ -1,6 +1,5 @@
 use crate::tessellationfigure::{TessellationFigure, TessellationPlane};
 use crate::tessellationline::{Point, Transform};
-use euclid::Angle;
 
 use svg::node::element::path::{Command, Data, Position::Absolute};
 use svg::node::element::{Definitions, Path, Use, SVG};
@@ -70,18 +69,15 @@ impl Compose for SVGBackend {
         figure: &TessellationFigure,
         m: &Transform,
     ) -> Option<SVG> {
-        let mut row = 0;
-        let g = plane.grid(figure, 12.0, 12.0);
-        let mut c = 0;
         let mut document = Document::new().set("viewBox", (0, 0, 400, 400));
-        let colors = vec!["red", "green", "blue", "black"];
+        let colors = ["red", "green", "blue", "black"];
 
         let points = figure
             .points()
             .windows(2)
             .filter_map(|l| if l[0] != l[1] { Some(l[0]) } else { None })
             .collect::<Vec<Point>>();
-        let p1 = points[0];
+        let p1 = *points.first()?;
 
         let mut pb = Data::new();
         pb.append(Command::Move(Absolute, (p1.x, p1.y).into()));
@@ -98,41 +94,22 @@ impl Compose for SVGBackend {
         let defs = Definitions::new().add(path);
         document.append(defs);
 
-        for rotdiv in 0..figure.rotdiv {
-            let angle = Angle::degrees(360.0 * (rotdiv as f32) / (figure.rotdiv as f32));
-
-            for gridrow in &g {
-                if !figure.is_reversed {
-                    c = row % 2; // use for brick
-                }
-                for gridpoint in gridrow {
-                    if figure.is_reversed {
-                        c = rotdiv; // for diamond
-                    }
-                    if !figure.is_reversed && figure.gridincy < figure.gridincx {
-                        c = row % 3; // used for hexagon
-                    }
-                    let m = Transform::rotation(angle)
-                        .then_scale(70.0, 70.0)
-                        .then_translate(euclid::vec2(gridpoint.x * 70.0, gridpoint.y * 70.0));
-
-                    let tile_figure = Use::new()
-                        .set("href", "#figure")
-                        .set("fill", colors[(c % 4) as usize])
-                        .set(
-                            "transform",
-                            format!(
-                                "matrix({},{},{},{},{},{})",
-                                m.m11, m.m12, m.m21, m.m22, m.m31, m.m32
-                            ),
-                        );
-                    document.append(tile_figure);
-
-                    c += 1;
-                }
-                row += 1;
-            }
+        let ncolors = figure.colors.clamp(1, colors.len());
+        for placement in plane.placements(figure, 12.0, 12.0) {
+            let t = placement.transform.then(m);
+            let tile_figure = Use::new()
+                .set("href", "#figure")
+                .set("fill", colors[placement.color % ncolors])
+                .set(
+                    "transform",
+                    format!(
+                        "matrix({},{},{},{},{},{})",
+                        t.m11, t.m12, t.m21, t.m22, t.m31, t.m32
+                    ),
+                );
+            document.append(tile_figure);
         }
+
         let edit_figure = Use::new()
             .set(
                 "transform",
@@ -182,7 +159,7 @@ mod tests {
 
         let svgbackend = Box::new(SVGBackend);
         let svg_document = svgbackend.compose(&f, &m).unwrap();
-        let expected_svg = "<svg viewBox=\"0 0 400 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n<path d=\"M0,0 L0,1 L1,1 L1,0 z\" id=\"figure\" vector-effect=\"non-scaling-stroke\"/>\n</defs>\n<use fill=\"none\" href=\"#figure\" stroke=\"yellow\" stroke-width=\"3px\" transform=\"matrix(100,0,0,100,100,100)\"/>\n</svg>";
+        let expected_svg = "<svg viewBox=\"0 0 400 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n<path d=\"M0,0 L1,0 L1,1 L0,1 z\" id=\"figure\" vector-effect=\"non-scaling-stroke\"/>\n</defs>\n<use fill=\"none\" href=\"#figure\" stroke=\"yellow\" stroke-width=\"3px\" transform=\"matrix(100,0,0,100,100,100)\"/>\n</svg>";
         assert_eq!(svg_document.get_data(), expected_svg);
     }
 }
