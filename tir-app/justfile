@@ -1,0 +1,226 @@
+# Tessellations app: build / test / package / deploy tasks.
+#
+# Works from a plain shell (re-enters the nix dev shell automatically) or from
+# inside `nix develop`. Run `just` to list all recipes.
+#
+#   just ci                  full pipeline: fmt, clippy, tests, desktop + APK builds
+#   just run                 desktop app
+#   just emu-run             debug APK on the emulator (starts it if needed)
+#   just phone-run           release APK on the USB-connected phone
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+set positional-arguments := false
+
+export TIR_QUIET := "1"
+
+# Wrap commands in this flake's dev shell unless already in it (TIR_DEVSHELL is
+# set by flake.nix; IN_NIX_SHELL would also match unrelated nix shells).
+nix := if env("TIR_DEVSHELL", "") == "" { "nix develop --quiet -c" } else { "" }
+
+package := "com.example.tir_app"
+activity := package + "/android.app.NativeActivity"
+apk_debug := "target/debug/apk/tir_app.apk"
+apk_release := "target/release/apk/tir_app.apk"
+
+# Release signing. Defaults to the debug keystore (fine for sideloading);
+# override with your own for distribution:
+#   RELEASE_KEYSTORE=~/my.jks RELEASE_KEYSTORE_PASSWORD=... just apk-release
+keystore := env("RELEASE_KEYSTORE", env("HOME", "") / ".android/debug.keystore")
+keystore_password := env("RELEASE_KEYSTORE_PASSWORD", "android")
+
+# List recipes
+default:
+    @just --list --unsorted
+
+# ---------------------------------------------------------------- CI ------
+
+# Full CI pipeline (no device needed)
+ci: flake-check fmt-check lint test build apk-debug apk-release
+    @echo "CI passed"
+
+# Full CI + deploy to the emulator and smoke-test it
+ci-emulator: ci emu-smoke
+
+# Evaluate the flake (dev shell + emulator package)
+flake-check:
+    nix flake check --quiet
+
+# Check formatting
+fmt-check:
+    {{ nix }} cargo fmt --check
+
+# Apply formatting
+fmt:
+    {{ nix }} cargo fmt
+
+# Clippy for desktop and Android, warnings are errors
+lint:
+    {{ nix }} cargo clippy --all-targets -- -D warnings
+    {{ nix }} cargo clippy --lib --target x86_64-linux-android -- -D warnings
+
+# Unit tests
+test:
+    {{ nix }} cargo test
+
+# ----------------------------------------------------------- Desktop ------
+
+# Build the desktop app (debug)
+build:
+    {{ nix }} cargo build
+
+# Build the desktop app (release)
+build-release:
+    {{ nix }} cargo build --release
+
+# Run the desktop app
+run:
+    {{ nix }} cargo run --release
+
+# Save a screenshot of the desktop app: just screenshot out.png [figure 0-5] [demo-edit 0/1]
+screenshot out="screenshot.png" figure="0" demo="0":
+    {{ nix }} cargo build --features screenshot
+    env -u WAYLAND_DISPLAY TIR_SCREENSHOT="{{ out }}" TIR_FIGURE="{{ figure }}" \
+        {{ if demo == "1" { "TIR_DEMO=1" } else { "" } }} \
+        {{ nix }} ./target/debug/tir_app
+    @echo "wrote {{ out }}"
+
+# ----------------------------------------------------------- Android ------
+
+# Debug APK for the emulator (x86_64)
+apk-debug:
+    {{ nix }} cargo apk build --lib --target x86_64-linux-android
+    @ls -lh {{ apk_debug }}
+
+# Signed release APK for phones (arm64) (pass target=all to include x86_64)
+apk-release target="aarch64-linux-android":
+    CARGO_APK_RELEASE_KEYSTORE="{{ keystore }}" \
+    CARGO_APK_RELEASE_KEYSTORE_PASSWORD="{{ keystore_password }}" \
+        {{ nix }} cargo apk build --lib --release \
+        {{ if target == "all" { "" } else { "--target " + target } }}
+    @ls -lh {{ apk_release }}
+
+# List connected devices
+devices:
+    {{ nix }} adb devices -l
+
+# ---------------------------------------------------------- Emulator ------
+
+# Start the emulator in the background and wait until it has booted
+emu-start:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if {{ nix }} adb devices | grep -q '^emulator-.*device$'; then
+        echo "emulator already running"; exit 0
+    fi
+    log="${TMPDIR:-/tmp}/tir-emulator.log"
+    echo "starting emulator (log: $log)"
+    setsid nix run .#emulator > "$log" 2>&1 < /dev/null &
+    for i in $(seq 1 60); do
+        sleep 5
+        if grep -q '^ready' "$log"; then echo "booted after $((i*5))s"; exit 0; fi
+    done
+    echo "emulator did not boot within 5 min, see $log" >&2; exit 1
+
+# Stop the emulator
+emu-stop:
+    -{{ nix }} adb -s "$(just _emu-serial)" emu kill
+
+# Delete the emulator's virtual device (recreated on next emu-start)
+emu-wipe: emu-stop
+    rm -rf ~/.android/avd/rust_x86_64.avd ~/.android/avd/rust_x86_64.ini
+
+# Build, install and launch the debug APK on the emulator
+emu-run: emu-start apk-debug
+    just _deploy "$(just _emu-serial)" {{ apk_debug }}
+
+# Deploy to the emulator and verify the app keeps running without a panic
+emu-smoke: emu-run
+    just _smoke "$(just _emu-serial)"
+
+# Follow the app's log on the emulator
+emu-log:
+    just _log "$(just _emu-serial)"
+
+# Screenshot of the emulator screen
+emu-screenshot out="emulator.png":
+    {{ nix }} adb -s "$(just _emu-serial)" exec-out screencap -p > "{{ out }}"
+    @echo "wrote {{ out }}"
+
+# ------------------------------------------------------------- Phone ------
+
+# Build, install and launch the release APK on the USB phone
+phone-run: apk-release
+    just _deploy "$(just _phone-serial)" {{ apk_release }}
+
+# Deploy to the phone and verify the app keeps running without a panic
+phone-smoke: phone-run
+    just _smoke "$(just _phone-serial)"
+
+# Follow the app's log on the phone
+phone-log:
+    just _log "$(just _phone-serial)"
+
+# Screenshot of the phone screen
+phone-screenshot out="phone.png":
+    {{ nix }} adb -s "$(just _phone-serial)" exec-out screencap -p > "{{ out }}"
+    @echo "wrote {{ out }}"
+
+# Uninstall the app from all connected devices
+uninstall:
+    #!/usr/bin/env bash
+    for s in $({{ nix }} adb devices | awk 'NR>1 && $2=="device" {print $1}'); do
+        echo "$s: $({{ nix }} adb -s "$s" uninstall {{ package }} 2>&1)"
+    done
+
+# ------------------------------------------------------------- Misc -------
+
+# Remove build artifacts
+clean:
+    {{ nix }} cargo clean
+
+# Update flake inputs (nixpkgs, rust-overlay) and Cargo.lock
+update:
+    nix flake update
+    {{ nix }} cargo update
+
+# ---------------------------------------------------------- Helpers -------
+
+[private]
+_emu-serial:
+    #!/usr/bin/env bash
+    s=$({{ nix }} adb devices | awk '$1 ~ /^emulator-/ && $2=="device" {print $1; exit}')
+    [ -n "$s" ] || { echo "no emulator running (just emu-start)" >&2; exit 1; }
+    echo "$s"
+
+[private]
+_phone-serial:
+    #!/usr/bin/env bash
+    s=$({{ nix }} adb devices | awk 'NR>1 && $1 !~ /^emulator-/ && $2=="device" {print $1; exit}')
+    [ -n "$s" ] || { echo "no phone connected (enable USB debugging and accept the prompt)" >&2; exit 1; }
+    echo "$s"
+
+[private]
+_deploy serial apk:
+    @echo "== installing {{ apk }} on {{ serial }}"
+    {{ nix }} adb -s {{ serial }} install -r {{ apk }}
+    {{ nix }} adb -s {{ serial }} shell am force-stop {{ package }}
+    {{ nix }} adb -s {{ serial }} logcat -c
+    {{ nix }} adb -s {{ serial }} shell am start -n {{ activity }}
+
+[private]
+_smoke serial:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    adb() { {{ nix }} adb -s {{ serial }} "$@"; }
+    sleep 8
+    pid=$(adb shell pidof {{ package }} || true)
+    [ -n "$pid" ] || { echo "FAIL: app not running on {{ serial }}" >&2; adb logcat -d | tail -40 >&2; exit 1; }
+    if adb logcat -d | grep -E 'panicked|FATAL EXCEPTION|eframe failed'; then
+        echo "FAIL: crash in log on {{ serial }}" >&2; exit 1
+    fi
+    gpu=$(adb logcat -d | grep -oE 'Software rasterizer detected|device_type: [A-Za-z]+, name: "[^"]+"' | head -1 || true)
+    echo "OK: {{ package }} running on {{ serial }} (pid $pid) ${gpu:+- $gpu}"
+
+[private]
+_log serial:
+    {{ nix }} adb -s {{ serial }} logcat -v time -s RustStdoutStderr:V tir_app:V egui_wgpu:V wgpu_hal:I '*:E'

@@ -1,0 +1,75 @@
+[package]
+name = "tir_app"
+version = "0.1.0"
+edition = "2024"
+license = "GPL-3.0"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "tir_app"
+path = "src/main.rs"
+
+[features]
+# Dev only: `TIR_SCREENSHOT=out.png cargo run --features screenshot`
+screenshot = ["dep:png"]
+
+[dependencies]
+log = "0.4"
+tessellations = { path = "../tessellations" }
+# Same major version as tessellations uses; used to triangulate (possibly concave) tiles.
+lyon = "1"
+png = { version = "0.18", optional = true }
+
+# Desktop: eframe with wgpu, x11 + wayland
+[target.'cfg(not(target_os = "android"))'.dependencies]
+eframe = { version = "0.36", default-features = false, features = [
+  "default_fonts",
+  "wgpu",
+  "wayland",
+  "x11",
+  "accesskit",
+] }
+env_logger = "0.11"
+
+# Android: wgpu + NativeActivity (what cargo-apk generates)
+[target.'cfg(target_os = "android")'.dependencies]
+eframe = { version = "0.36", default-features = false, features = [
+  "default_fonts",
+  "wgpu",
+  "android-native-activity",
+] }
+android_logger = "0.15"
+# Only for the AndroidApp type in android_main (eframe doesn't re-export winit).
+winit = { version = "0.30", default-features = false }
+# Read resources.configuration.fontScale (same version android-activity uses).
+jni = "0.22"
+
+[package.metadata.android]
+package = "com.example.tir_app"
+apk_name = "tir_app"
+build_targets = ["x86_64-linux-android", "aarch64-linux-android"]
+
+[package.metadata.android.sdk]
+min_sdk_version = 26
+target_sdk_version = 34
+
+[package.metadata.android.application]
+label = "Tessellations"
+
+[package.metadata.android.application.activity]
+orientation = "unspecified"
+config_changes = "orientation|screenSize|screenLayout|keyboardHidden"
+
+[profile.dev]
+# Line tables only: keeps backtraces, but the debug APK is ~30 MB instead of ~350 MB.
+debug = "line-tables-only"
+
+[profile.dev.package."*"]
+opt-level = 2
+debug = false
+
+[profile.release]
+opt-level = 3
+lto = true
