@@ -1,7 +1,6 @@
 //! Main application state and eframe::App implementation.
 
 use eframe::egui::{self, Color32, Sense, Vec2};
-use tessellations::tessellationfigure::TessellationPlane;
 use tessellations::tessellationline::Point;
 
 use crate::figure::{FigureKind, Settings, View};
@@ -74,7 +73,6 @@ impl FontScale {
 pub struct TirApp {
     pub kind: FigureKind,
     pub figure: tessellations::tessellationfigure::TessellationFigure,
-    pub plane: TessellationPlane,
     pub selected: Option<tessellations::tessellationline::PointIndexPath>,
     /// Center of the untouched figure, so the view doesn't jump while editing.
     pub home_center: Point,
@@ -95,7 +93,6 @@ impl Default for TirApp {
         let mut app = Self {
             kind: FigureKind::Square,
             figure: FigureKind::Square.build(),
-            plane: TessellationPlane {},
             selected: None,
             home_center: Point::new(0.5, 0.5),
             settings: Settings::default(),
@@ -146,7 +143,7 @@ impl TirApp {
             .lines
             .iter()
             .map(|l| {
-                let p = l.dpoints();
+                let p = l.points();
                 let m = p[0].lerp(p[1], 0.5);
                 let c = self.home_center;
                 (m, m.lerp(c, 0.35))
@@ -219,14 +216,7 @@ impl eframe::App for TirApp {
                 }
 
                 if self.settings.show_tiles {
-                    paint_tiles(
-                        &painter,
-                        &self.figure,
-                        &self.plane,
-                        view,
-                        rect,
-                        &self.settings,
-                    );
+                    paint_tiles(&painter, &self.figure, view, rect, &self.settings);
                 }
                 if self.settings.show_editor {
                     paint_editor(&painter, &self.figure, self.selected, view);
@@ -322,9 +312,10 @@ mod tests {
 
         // The moved point is now grabbable as a handle.
         assert_eq!(app.figure.hitpoints(Point::new(0.2, 0.5), tol), Some(sel));
-        // ...and from its mirrored copy too.
+        // ...and from the linked point on the opposite edge too.
         let mirrored = app.figure.hitpoints(Point::new(1.2, 0.5), tol).unwrap();
-        assert!(mirrored.corrp);
+        assert_eq!(mirrored.line_index, 1, "{mirrored:?}");
+        assert!(!mirrored.corrp, "{mirrored:?}");
 
         // Concave shape still triangulates.
         assert!(
@@ -350,9 +341,24 @@ mod tests {
         assert_eq!(FontScale::from_raw(5.0).factor(), 2.0);
     }
 
-    /// No overlaps/gaps: figure area * rotations == lattice cell area.
+    /// No overlaps or gaps: every sampled point of the plane lies in exactly
+    /// one placement.
     #[test]
     fn tiles_exactly_cover_the_plane() {
+        /// Even-odd rule.
+        fn inside(poly: &[Point], p: Point) -> bool {
+            let mut c = false;
+            let n = poly.len();
+            for i in 0..n {
+                let (a, b) = (poly[i], poly[(i + n - 1) % n]);
+                if (a.y > p.y) != (b.y > p.y) && p.x < (b.x - a.x) * (p.y - a.y) / (b.y - a.y) + a.x
+                {
+                    c = !c;
+                }
+            }
+            c
+        }
+
         for kind in crate::figure::FigureKind::ALL {
             let mut app = TirApp {
                 kind,
@@ -360,21 +366,28 @@ mod tests {
             };
             app.reset();
             let poly = app.polygon();
-            let area: f32 = (0..poly.len())
-                .map(|i| {
-                    let (a, b) = (poly[i], poly[(i + 1) % poly.len()]);
-                    a.x * b.y - b.x * a.y
+            let tiles: Vec<Vec<Point>> = app
+                .figure
+                .placements(8.0, 6.0)
+                .iter()
+                .map(|pl| {
+                    poly.iter()
+                        .map(|&p| pl.transform.transform_point(p))
+                        .collect()
                 })
-                .sum::<f32>()
-                .abs()
-                / 2.0;
-            let f = &app.figure;
-            let cell = f.gridincx * f.gridincy;
-            let covered = area * f.rotdiv as f32;
-            assert!(
-                (covered - cell).abs() < 1e-3,
-                "{kind:?}: tiles {covered} vs cell {cell}"
-            );
+                .collect();
+
+            // Irregular steps so samples don't land exactly on tile edges.
+            for iy in 0..21 {
+                for ix in 0..21 {
+                    let p = Point::new(
+                        -4.0 + 8.0 * (ix as f32 + 0.37) / 21.0,
+                        -3.0 + 6.0 * (iy as f32 + 0.61) / 21.0,
+                    );
+                    let hits = tiles.iter().filter(|t| inside(t, p)).count();
+                    assert_eq!(hits, 1, "{kind:?}: {p:?} covered {hits} times");
+                }
+            }
         }
     }
 
@@ -393,7 +406,7 @@ mod tests {
             assert!(!tri.indices.is_empty(), "{kind:?}");
 
             // Press on the middle of the first line -> inserts a point we can drag.
-            let pts = app.figure.lines[0].dpoints();
+            let pts = app.figure.lines[0].points();
             let mid = pts[0].lerp(pts[1], 0.5);
             let h = app
                 .figure
@@ -407,7 +420,7 @@ mod tests {
             let to = mid.lerp(app.home_center, 0.3);
             app.figure.update(sel, to);
             assert!(
-                app.polygon().iter().any(|p| (*p - to).length() < 1e-4),
+                app.polygon().iter().any(|p| p.distance_to(to) < 1e-4),
                 "{kind:?}"
             );
             assert!(

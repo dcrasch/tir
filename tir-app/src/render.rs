@@ -36,23 +36,6 @@ impl FigureKind {
     }
 }
 
-/// Palette slot (0..4) for the copy of the figure at lattice `origin`,
-/// rotated by `rot` (1..=rotdiv) steps of 360°/rotdiv.
-pub fn tile_color_index(figure: &TessellationFigure, origin: Point, rot: u32) -> usize {
-    let idx = if figure.rotdiv > 1 {
-        // Rotational figures: one colour per rotation (like the crate).
-        rot.saturating_sub(1)
-    } else {
-        // Lattice indices of this origin: origin = r*(shiftx, gridincy) + k*(gridincx, 0).
-        let r = (origin.y / figure.gridincy).round() as i32;
-        let k = ((origin.x - r as f32 * figure.shiftx) / figure.gridincx).round() as i32;
-        // Translational figures: neighbours in a row and in
-        // adjacent rows always get different colours.
-        (k + 2 * r.rem_euclid(2)).rem_euclid(4) as u32
-    };
-    (idx % 4) as usize
-}
-
 /// Darker, semi-transparent version of a tile color, for its outline.
 pub fn edge_color(color: Color32) -> Color32 {
     let dark = |c: u8| (c as f32 * 0.7) as u8;
@@ -63,7 +46,6 @@ pub fn edge_color(color: Color32) -> Color32 {
 pub fn paint_tiles(
     painter: &eframe::egui::Painter,
     figure: &TessellationFigure,
-    plane: &tessellations::tessellationfigure::TessellationPlane,
     view: View,
     rect: eframe::egui::Rect,
     settings: &Settings,
@@ -80,15 +62,15 @@ pub fn paint_tiles(
 
     let colors = palette.colors();
 
-    // Tile origins from the crate (tessellations >= 0.3.1). `grid()` covers a
-    // width x height area centered on the figure origin (0, 0), so pass
-    // twice the farthest visible distance from 0 on each axis. The figure is
-    // drawn `rotdiv` times at each origin, rotated by 360°/rotdiv.
+    // `placements()` covers a width x height area centered on the figure
+    // origin (0, 0), so pass twice the farthest visible distance from 0 on
+    // each axis. Each placement already carries its isometry (rotation,
+    // reflection and translation) and the colour chosen by the crate.
     let lo = view.to_figure(rect.min);
     let hi = view.to_figure(rect.max);
     let width = 2.0 * lo.x.abs().max(hi.x.abs());
     let height = 2.0 * lo.y.abs().max(hi.y.abs());
-    let grid = plane.grid(figure, width, height);
+    let placements = figure.placements(width, height);
 
     let mut mesh = Mesh::default();
     // Outline polygon, shared by all tiles (only needed for edges).
@@ -101,44 +83,32 @@ pub fn paint_tiles(
     // Collect outline paths for antialiasing (only if show_edges is true)
     let mut outlines: Vec<(Vec<Pos2>, Color32)> = Vec::new();
 
-    for origin in grid.iter().flatten() {
-        for rot in 1..=figure.rotdiv {
-            let color = colors[tile_color_index(figure, *origin, rot)];
-            let angle = std::f32::consts::TAU * rot as f32 / figure.rotdiv as f32;
-            let (sin, cos) = angle.sin_cos();
+    for placement in &placements {
+        let color = colors[placement.color % colors.len()];
+        let transform = placement.transform;
 
-            let base = mesh.vertices.len() as u32;
-            for v in &tri.vertices {
-                let p = Point::new(
-                    v.x * cos - v.y * sin + origin.x,
-                    v.x * sin + v.y * cos + origin.y,
-                );
-                mesh.colored_vertex(view.to_screen(p), color);
+        let base = mesh.vertices.len() as u32;
+        for v in &tri.vertices {
+            let p = transform.transform_point(*v);
+            mesh.colored_vertex(view.to_screen(p), color);
+        }
+        mesh.indices.extend(tri.indices.iter().map(|i| base + i));
+
+        // Only create outlines if show_edges is true
+        if show_edges {
+            // Create outline for this tile
+            let mut outline_points: Vec<Pos2> = polygon
+                .iter()
+                .map(|p| view.to_screen(transform.transform_point(*p)))
+                .collect();
+
+            if let Some(&first) = outline_points.first() {
+                outline_points.push(first);
             }
-            mesh.indices.extend(tri.indices.iter().map(|i| base + i));
 
-            // Only create outlines if show_edges is true
-            if show_edges {
-                // Create outline for this tile
-                let mut outline_points: Vec<Pos2> = polygon
-                    .iter()
-                    .map(|p| {
-                        let rotated = Point::new(
-                            p.x * cos - p.y * sin + origin.x,
-                            p.x * sin + p.y * cos + origin.y,
-                        );
-                        view.to_screen(rotated)
-                    })
-                    .collect();
-
-                if let Some(&first) = outline_points.first() {
-                    outline_points.push(first);
-                }
-
-                // Darker outline color for subtle edge definition
-                let outline_color = edge_color(color);
-                outlines.push((outline_points, outline_color));
-            }
+            // Darker outline color for subtle edge definition
+            let outline_color = edge_color(color);
+            outlines.push((outline_points, outline_color));
         }
     }
 
@@ -156,7 +126,33 @@ pub fn paint_tiles(
     }
 }
 
-/// Draw very light grid lines showing the original tile layout.
+/// The two shortest independent translation vectors of the tiling.
+fn lattice_basis(figure: &TessellationFigure, width: f32, height: f32) -> Option<(Point, Point)> {
+    let mut translations: Vec<Point> = figure
+        .placements(width, height)
+        .into_iter()
+        .filter(|p| {
+            let t = p.transform;
+            (t.m11 - 1.0).abs() < 1e-4
+                && t.m12.abs() < 1e-4
+                && t.m21.abs() < 1e-4
+                && (t.m22 - 1.0).abs() < 1e-4
+        })
+        .map(|p| Point::new(p.transform.m31, p.transform.m32))
+        .filter(|p| p.x * p.x + p.y * p.y > 1e-6)
+        .collect();
+    let len2 = |p: &Point| p.x * p.x + p.y * p.y;
+    translations.sort_by(|a, b| len2(a).partial_cmp(&len2(b)).unwrap());
+    translations.dedup_by(|a, b| (*a - *b).square_length() < 1e-6);
+
+    let t1 = *translations.first()?;
+    let t2 = *translations
+        .iter()
+        .find(|t| (t1.x * t.y - t1.y * t.x).abs() > 1e-3)?;
+    Some((t1, t2))
+}
+
+/// Draw very light grid lines along the tiling's translation lattice.
 fn draw_grid_lines(
     painter: &eframe::egui::Painter,
     figure: &TessellationFigure,
@@ -165,36 +161,64 @@ fn draw_grid_lines(
 ) {
     let lo = view.to_figure(rect.min);
     let hi = view.to_figure(rect.max);
+    let width = 2.0 * lo.x.abs().max(hi.x.abs());
+    let height = 2.0 * lo.y.abs().max(hi.y.abs());
+    let Some((t1, t2)) = lattice_basis(figure, width, height) else {
+        return;
+    };
+
+    let det = t1.x * t2.y - t1.y * t2.x;
+    if det.abs() < 1e-6 {
+        return;
+    }
+    let cross = |a: Point, b: Point| a.x * b.y - a.y * b.x;
 
     // Very light gray for grid lines
-    let grid_color = Color32::from_rgba_unmultiplied(180, 180, 180, 60); // Very transparent light gray
+    let grid_color = Color32::from_rgba_unmultiplied(180, 180, 180, 60);
 
-    // Draw vertical grid lines
-    let x_start = (lo.x / figure.gridincx).floor() as i32;
-    let x_end = (hi.x / figure.gridincx).ceil() as i32;
+    let corners = [lo, Point::new(hi.x, lo.y), hi, Point::new(lo.x, hi.y)];
 
-    for i in x_start..=x_end {
-        let x = i as f32 * figure.gridincx;
-        let p1 = view.to_screen(Point::new(x, lo.y));
-        let p2 = view.to_screen(Point::new(x, hi.y));
-        painter.line_segment([p1, p2], Stroke::new(0.5, grid_color));
+    // Lines parallel to t1: p = j*t2 + s*t1.
+    let (mut j_min, mut j_max) = (f32::INFINITY, f32::NEG_INFINITY);
+    let (mut s_min, mut s_max) = (f32::INFINITY, f32::NEG_INFINITY);
+    // Lines parallel to t2: p = i*t1 + s*t2.
+    let (mut i_min, mut i_max) = (f32::INFINITY, f32::NEG_INFINITY);
+    let (mut r_min, mut r_max) = (f32::INFINITY, f32::NEG_INFINITY);
+    for &c in &corners {
+        let j = cross(t1, c) / det;
+        let s = cross(c, t2) / det;
+        j_min = j_min.min(j);
+        j_max = j_max.max(j);
+        s_min = s_min.min(s);
+        s_max = s_max.max(s);
+
+        let i = cross(c, t2) / det;
+        let r = cross(t1, c) / det;
+        i_min = i_min.min(i);
+        i_max = i_max.max(i);
+        r_min = r_min.min(r);
+        r_max = r_max.max(r);
     }
 
-    // Draw horizontal grid lines
-    let y_start = (lo.y / figure.gridincy).floor() as i32;
-    let y_end = (hi.y / figure.gridincy).ceil() as i32;
-
-    // For shifted rows (like brick pattern)
-    for j in y_start..=y_end {
-        let y = j as f32 * figure.gridincy;
-        let shift = j as f32 * figure.shiftx;
-
-        let x1 = lo.x;
-        let x2 = hi.x;
-
-        let p1 = view.to_screen(Point::new(x1 + shift, y));
-        let p2 = view.to_screen(Point::new(x2 + shift, y));
-        painter.line_segment([p1, p2], Stroke::new(0.5, grid_color));
+    for j in j_min.floor() as i32..=j_max.ceil() as i32 {
+        let (ox, oy) = (t2.x * j as f32, t2.y * j as f32);
+        painter.line_segment(
+            [
+                view.to_screen(Point::new(ox + t1.x * s_min, oy + t1.y * s_min)),
+                view.to_screen(Point::new(ox + t1.x * s_max, oy + t1.y * s_max)),
+            ],
+            Stroke::new(0.5, grid_color),
+        );
+    }
+    for i in i_min.floor() as i32..=i_max.ceil() as i32 {
+        let (ox, oy) = (t1.x * i as f32, t1.y * i as f32);
+        painter.line_segment(
+            [
+                view.to_screen(Point::new(ox + t2.x * r_min, oy + t2.y * r_min)),
+                view.to_screen(Point::new(ox + t2.x * r_max, oy + t2.y * r_max)),
+            ],
+            Stroke::new(0.5, grid_color),
+        );
     }
 }
 
@@ -215,26 +239,25 @@ pub fn paint_editor(
     }
     painter.add(Shape::line(outline, Stroke::new(3.0, OUTLINE)));
 
-    // Handles. Interior points of each line are movable, on both the line
-    // itself (corrp = false) and its transformed copy (corrp = true).
-    // Line endpoints are the fixed corners.
+    // Handles. Interior points of each line are movable; line endpoints are
+    // the fixed corners. Built-in figures use identity line transforms, so
+    // each edge's points already are its on-screen outline.
     for (li, line) in figure.lines.iter().enumerate() {
-        for (corrp, pts) in [(false, line.dpoints()), (true, line.cpoints())] {
-            let n = pts.len();
-            for (pi, p) in pts.into_iter().enumerate() {
-                let pos = view.to_screen(p);
-                if pi == 0 || pi == n - 1 {
-                    painter.circle_filled(pos, 3.0, Color32::DARK_GRAY);
-                    continue;
-                }
-                let is_sel = selected.is_some_and(|s| s.line_index == li && s.point_index == pi);
-                let (fill, r) = match (is_sel, selected.map(|s| s.corrp == corrp)) {
-                    (true, Some(true)) => (Color32::YELLOW, HANDLE_RADIUS_PX + 2.0),
-                    (true, _) => (Color32::from_rgb(0xff, 0xe0, 0x80), HANDLE_RADIUS_PX),
-                    _ => (Color32::WHITE, HANDLE_RADIUS_PX),
-                };
-                painter.circle(pos, r, fill, Stroke::new(2.0, OUTLINE));
+        let pts = line.points();
+        let n = pts.len();
+        for (pi, &p) in pts.iter().enumerate() {
+            let pos = view.to_screen(p);
+            if pi == 0 || pi == n - 1 {
+                painter.circle_filled(pos, 3.0, Color32::DARK_GRAY);
+                continue;
             }
+            let is_sel = selected.is_some_and(|s| s.line_index == li && s.point_index == pi);
+            let (fill, r) = if is_sel {
+                (Color32::YELLOW, HANDLE_RADIUS_PX + 2.0)
+            } else {
+                (Color32::WHITE, HANDLE_RADIUS_PX)
+            };
+            painter.circle(pos, r, fill, Stroke::new(2.0, OUTLINE));
         }
     }
 }
@@ -287,61 +310,56 @@ mod tests {
     }
 
     #[test]
-    fn color_index_in_range() {
+    fn placement_colors_are_in_palette_range() {
+        let palette_len = Palette::Original.colors().len();
         for kind in FigureKind::ALL {
             let fig = kind.build();
-            for x in -3..=3 {
-                for y in -3..=3 {
-                    let o = Point::new(x as f32 * fig.gridincx, y as f32 * fig.gridincy);
-                    for rot in 1..=fig.rotdiv {
-                        assert!(tile_color_index(&fig, o, rot) < 4, "{kind:?}");
-                    }
-                }
+            for p in fig.placements(8.0, 8.0) {
+                assert!(p.color < fig.colors.max(1), "{kind:?}: colour {}", p.color);
+                assert!(p.color % palette_len < palette_len, "{kind:?}");
             }
         }
     }
 
+    /// Neighbouring tiles must get different colours.
     #[test]
-    fn rotated_copies_get_distinct_colors() {
-        for kind in FigureKind::ALL {
-            let fig = kind.build();
-            if fig.rotdiv <= 1 {
-                continue;
-            }
-            let o = Point::new(0.0, 0.0);
-            let idx: Vec<usize> = (1..=fig.rotdiv)
-                .map(|rot| tile_color_index(&fig, o, rot))
-                .collect();
-            for (i, a) in idx.iter().enumerate() {
-                for b in &idx[i + 1..] {
-                    // Only possible to keep apart when rotdiv <= palette size.
-                    if fig.rotdiv <= 4 {
-                        assert_ne!(a, b, "{kind:?}: {idx:?}");
-                    }
-                }
-            }
-        }
-    }
+    fn adjacent_tiles_get_different_colors() {
+        use std::collections::HashMap;
 
-    /// Translational figures: horizontal and vertical neighbours differ.
-    #[test]
-    fn neighbouring_tiles_get_different_colors() {
+        let key = |a: Point, b: Point| {
+            let r = |v: f32| (v * 1000.0).round() as i64;
+            let (a, b) = ((r(a.x), r(a.y)), (r(b.x), r(b.y)));
+            if a <= b {
+                (a.0, a.1, b.0, b.1)
+            } else {
+                (b.0, b.1, a.0, a.1)
+            }
+        };
+
         for kind in FigureKind::ALL {
             let fig = kind.build();
-            if fig.rotdiv > 1 {
-                continue;
-            }
-            let at = |k: i32, r: i32| {
-                let o = Point::new(
-                    k as f32 * fig.gridincx + r as f32 * fig.shiftx,
-                    r as f32 * fig.gridincy,
-                );
-                tile_color_index(&fig, o, 1)
-            };
-            for r in -4..=4 {
-                for k in -4..=4 {
-                    assert_ne!(at(k, r), at(k + 1, r), "{kind:?} row ({k},{r})");
-                    assert_ne!(at(k, r), at(k, r + 1), "{kind:?} col ({k},{r})");
+            let placements = fig.placements(8.0, 8.0);
+            let mut edges: HashMap<(i64, i64, i64, i64), (usize, usize)> = HashMap::new();
+            for (i, p) in placements.iter().enumerate() {
+                for line in &fig.lines {
+                    let pts = line.points();
+                    let (Some(&a), Some(&b)) = (pts.first(), pts.last()) else {
+                        continue;
+                    };
+                    let (a, b) = (
+                        p.transform.transform_point(a),
+                        p.transform.transform_point(b),
+                    );
+                    if a == b {
+                        continue;
+                    }
+                    if let Some(&(j, color)) = edges.get(&key(a, b)) {
+                        if j != i {
+                            assert_ne!(color, p.color, "{kind:?}: tiles {i} and {j} share colour");
+                        }
+                    } else {
+                        edges.insert(key(a, b), (i, p.color));
+                    }
                 }
             }
         }
@@ -368,7 +386,6 @@ mod tests {
     #[test]
     fn paint_tiles_all_settings() {
         let ctx = eframe::egui::Context::default();
-        let plane = tessellations::tessellationfigure::TessellationPlane {};
         let rect = Rect::from_min_size(Pos2::ZERO, eframe::egui::vec2(400.0, 300.0));
         let view = View {
             scale: 50.0,
@@ -388,7 +405,7 @@ mod tests {
                         show_grid,
                         ..Settings::default()
                     };
-                    paint_tiles(&painter, &fig, &plane, view, rect, &settings);
+                    paint_tiles(&painter, &fig, view, rect, &settings);
                 }
             }
             paint_editor(&painter, &fig, None, view);

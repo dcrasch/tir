@@ -107,17 +107,15 @@ pub enum FigureKind {
     Triangle,
     Square90,
     Diamond,
-    Brick,
     Hexagon,
 }
 
 impl FigureKind {
-    pub const ALL: [Self; 6] = [
+    pub const ALL: [Self; 5] = [
         Self::Square,
         Self::Triangle,
         Self::Square90,
         Self::Diamond,
-        Self::Brick,
         Self::Hexagon,
     ];
 
@@ -127,7 +125,6 @@ impl FigureKind {
             Self::Triangle => "Triangle",
             Self::Square90 => "Square 90°",
             Self::Diamond => "Diamond",
-            Self::Brick => "Brick",
             Self::Hexagon => "Hexagon",
         }
     }
@@ -138,7 +135,6 @@ impl FigureKind {
             Self::Triangle => TessellationFigure::triangle(),
             Self::Square90 => TessellationFigure::square90(),
             Self::Diamond => TessellationFigure::diamond(),
-            Self::Brick => TessellationFigure::brick(),
             Self::Hexagon => TessellationFigure::hexagon(),
         }
     }

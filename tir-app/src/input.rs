@@ -130,7 +130,7 @@ mod tests {
         }
 
         fn has(&self, p: Point) -> bool {
-            self.polygon().iter().any(|q| (*q - p).length() < 1e-3)
+            self.polygon().iter().any(|q| q.distance_to(p) < 1e-3)
         }
     }
 
@@ -167,9 +167,10 @@ mod tests {
         h.release(Point::new(0.2, 0.5));
         let n = h.polygon().len();
 
-        // Grab the mirrored copy and move it: no new point, both sides move.
+        // Grab the linked point on the opposite edge and move it: no new
+        // point, both sides move.
         h.press(Point::new(1.2, 0.5));
-        assert!(h.selected.is_some_and(|s| s.corrp));
+        assert!(h.selected.is_some_and(|s| s.line_index == 1 && !s.corrp));
         h.drag_to(Point::new(1.1, 0.6));
         h.release(Point::new(1.1, 0.6));
         assert_eq!(h.polygon().len(), n);

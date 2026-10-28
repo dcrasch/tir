@@ -1,4 +1,5 @@
 use std::fs;
+use std::sync::Arc;
 
 use lyon::math::*;
 use lyon::tessellation;
@@ -7,9 +8,10 @@ use lyon::tessellation::{FillOptions, FillTessellator};
 use lyon::tessellation::{StrokeOptions, StrokeTessellator};
 use palette::Srgb;
 use winit::dpi::PhysicalSize;
-use winit::event::{ElementState, Event, KeyboardInput, MouseButton, VirtualKeyCode, WindowEvent};
-use winit::event_loop::{ControlFlow, EventLoop};
-use winit::window::{Window, WindowBuilder};
+use winit::event::{ElementState, Event, MouseButton, WindowEvent};
+use winit::event_loop::{ActiveEventLoop, ControlFlow, EventLoop};
+use winit::keyboard::{KeyCode, PhysicalKey};
+use winit::window::Window;
 
 // For create_buffer_init()
 use wgpu::util::DeviceExt;
@@ -100,7 +102,7 @@ fn create_multisampled_framebuffer(
         .create_view(&wgpu::TextureViewDescriptor::default())
 }
 
-fn main() {
+fn main() -> Result<(), Box<dyn std::error::Error>> {
     env_logger::init();
     println!("== wgpu example ==");
     println!("Controls:");
@@ -143,39 +145,41 @@ fn main() {
         selected_point_index: None,
     };
 
-    let event_loop = EventLoop::new();
+    let event_loop = EventLoop::new()?;
     let title = TessellationFigure::title(figure_index);
     println!("{title}");
-    let window_builder = WindowBuilder::new()
-        .with_title(title)
-        .with_inner_size(scene.window_size);
-    let window = window_builder.build(&event_loop).unwrap();
+    let window = Arc::new(
+        event_loop.create_window(
+            Window::default_attributes()
+                .with_title(title)
+                .with_inner_size(scene.window_size),
+        )?,
+    );
 
     // create an instance
     let instance = wgpu::Instance::default();
 
     // create an surface
-    let surface = unsafe { instance.create_surface(&window) }.unwrap();
+    let surface = instance.create_surface(window.clone())?;
 
     // create an adapter
     let adapter = block_on(instance.request_adapter(&wgpu::RequestAdapterOptions {
         power_preference: wgpu::PowerPreference::LowPower,
         compatible_surface: Some(&surface),
         force_fallback_adapter: false,
+        apply_limit_buckets: false,
     }))
     .unwrap();
     // create a device and a queue
-    let (device, queue) = block_on(adapter.request_device(
-        &wgpu::DeviceDescriptor {
-            label: None,
-            features: wgpu::Features::default(),
-            // Request exactly what this adapter supports, so the same binary
-            // works on desktop GPUs and Raspberry Pi 4 Vulkan (which cannot
-            // satisfy Limits::default()).
-            limits: adapter.limits(),
-        },
-        None,
-    ))
+    let (device, queue) = block_on(adapter.request_device(&wgpu::DeviceDescriptor {
+        label: None,
+        // Request exactly what this adapter supports, so the same binary
+        // works on desktop GPUs and Raspberry Pi 4 Vulkan (which cannot
+        // satisfy Limits::default()).
+        required_features: wgpu::Features::default(),
+        required_limits: adapter.limits(),
+        ..Default::default()
+    }))
     .unwrap();
 
     let globals_buffer_byte_size = std::mem::size_of::<Globals>() as u64;
@@ -244,15 +248,15 @@ fn main() {
     });
 
     let pipeline_layout = device.create_pipeline_layout(&wgpu::PipelineLayoutDescriptor {
-        bind_group_layouts: &[&bind_group_layout],
-        push_constant_ranges: &[],
+        bind_group_layouts: &[Some(&bind_group_layout)],
+        immediate_size: 0,
         label: None,
     });
 
     let depth_stencil_state = Some(wgpu::DepthStencilState {
         format: wgpu::TextureFormat::Depth32Float,
-        depth_write_enabled: true,
-        depth_compare: wgpu::CompareFunction::Greater,
+        depth_write_enabled: Some(true),
+        depth_compare: Some(wgpu::CompareFunction::Greater),
         stencil: wgpu::StencilState {
             front: wgpu::StencilFaceState::IGNORE,
             back: wgpu::StencilFaceState::IGNORE,
@@ -267,8 +271,9 @@ fn main() {
         layout: Some(&pipeline_layout),
         vertex: wgpu::VertexState {
             module: vs_module,
-            entry_point: "main",
-            buffers: &[wgpu::VertexBufferLayout {
+            entry_point: Some("main"),
+            compilation_options: Default::default(),
+            buffers: &[Some(wgpu::VertexBufferLayout {
                 array_stride: std::mem::size_of::<GpuVertex>() as u64,
                 step_mode: wgpu::VertexStepMode::Vertex,
                 attributes: &[
@@ -288,11 +293,12 @@ fn main() {
                         shader_location: 2,
                     },
                 ],
-            }],
+            })],
         },
         fragment: Some(wgpu::FragmentState {
             module: fs_module,
-            entry_point: "main",
+            entry_point: Some("main"),
+            compilation_options: Default::default(),
             targets: &[Some(wgpu::ColorTargetState {
                 format: wgpu::TextureFormat::Bgra8Unorm,
                 blend: None,
@@ -317,23 +323,19 @@ fn main() {
             mask: !0,
             alpha_to_coverage_enabled: false,
         },
-        multiview: None,
+        multiview_mask: None,
+        cache: None,
     };
 
     let render_pipeline = device.create_render_pipeline(&render_pipeline_descriptor);
 
-    let swapchain_capabilities = surface.get_capabilities(&adapter);
     let size = window.inner_size();
 
-    let mut surface_desc = wgpu::SurfaceConfiguration {
-        usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
-        format: wgpu::TextureFormat::Bgra8Unorm,
-        width: size.width,
-        height: size.height,
-        present_mode: wgpu::PresentMode::AutoVsync,
-        alpha_mode: swapchain_capabilities.alpha_modes[0],
-        view_formats: vec![],
-    };
+    let mut surface_desc = surface
+        .get_default_config(&adapter, size.width, size.height)
+        .unwrap();
+    surface_desc.format = wgpu::TextureFormat::Bgra8Unorm;
+    surface_desc.present_mode = wgpu::PresentMode::AutoVsync;
 
     let mut multisampled_render_target = None;
 
@@ -343,11 +345,17 @@ fn main() {
 
     window.request_redraw();
 
-    event_loop.run(move |event, _, control_flow| {
+    event_loop.set_control_flow(ControlFlow::Poll);
+    event_loop.run(move |event, event_loop| {
+        if matches!(event, Event::AboutToWait) {
+            window.request_redraw();
+            return;
+        }
+
         if !update_inputs(
             event,
             &window,
-            control_flow,
+            event_loop,
             &mut scene,
             &mut f,
             &mut figure_index,
@@ -400,9 +408,15 @@ fn main() {
         scene.render = false;
 
         let frame = match surface.get_current_texture() {
-            Ok(texture) => texture,
-            Err(e) => {
-                println!("Swap-chain error: {e:?}");
+            wgpu::CurrentSurfaceTexture::Success(frame)
+            | wgpu::CurrentSurfaceTexture::Suboptimal(frame) => frame,
+            wgpu::CurrentSurfaceTexture::Outdated | wgpu::CurrentSurfaceTexture::Lost => {
+                surface.configure(&device, &surface_desc);
+                return;
+            }
+            wgpu::CurrentSurfaceTexture::Timeout
+            | wgpu::CurrentSurfaceTexture::Occluded
+            | wgpu::CurrentSurfaceTexture::Validation => {
                 return;
             }
         };
@@ -535,18 +549,20 @@ fn main() {
             let color_attachment = if let Some(msaa_target) = &multisampled_render_target {
                 wgpu::RenderPassColorAttachment {
                     view: msaa_target,
+                    depth_slice: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
-                        store: true,
+                        store: wgpu::StoreOp::Store,
                     },
                     resolve_target: Some(&frame_view),
                 }
             } else {
                 wgpu::RenderPassColorAttachment {
                     view: &frame_view,
+                    depth_slice: None,
                     ops: wgpu::Operations {
                         load: wgpu::LoadOp::Clear(wgpu::Color::WHITE),
-                        store: true,
+                        store: wgpu::StoreOp::Store,
                     },
                     resolve_target: None,
                 }
@@ -559,13 +575,13 @@ fn main() {
                     view: depth_texture_view.as_ref().unwrap(),
                     depth_ops: Some(wgpu::Operations {
                         load: wgpu::LoadOp::Clear(0.0),
-                        store: true,
+                        store: wgpu::StoreOp::Store,
                     }),
-                    stencil_ops: Some(wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(0),
-                        store: true,
-                    }),
+                    // Depth32Float has no stencil aspect, so this must be
+                    // `None`; wgpu rejects clear/store ops for a missing aspect.
+                    stencil_ops: None,
                 }),
+                ..Default::default()
             });
 
             pass.set_pipeline(&render_pipeline);
@@ -578,8 +594,11 @@ fn main() {
         }
 
         queue.submit(Some(encoder.finish()));
-        frame.present();
-    });
+        // wgpu 30 moved presentation from `SurfaceTexture` to `Queue`.
+        queue.present(frame);
+    })?;
+
+    Ok(())
 }
 
 /// This vertex constructor forwards the positions and normals provided by the
@@ -625,7 +644,7 @@ struct SceneParams {
 fn update_inputs(
     event: Event<()>,
     window: &Window,
-    control_flow: &mut ControlFlow,
+    event_loop: &ActiveEventLoop,
     scene: &mut SceneParams,
     figure: &mut TessellationFigure,
     figure_index: &mut usize,
@@ -634,11 +653,11 @@ fn update_inputs(
     let mpx = (window.inner_size().width as f32) / 2.0;
     let mpy = (window.inner_size().height as f32) / 2.0;
     match event {
-        Event::RedrawRequested(_) => {
+        Event::WindowEvent {
+            event: WindowEvent::RedrawRequested,
+            ..
+        } => {
             scene.render = true;
-        }
-        Event::RedrawEventsCleared => {
-            window.request_redraw();
         }
         Event::WindowEvent {
             event: WindowEvent::Destroyed,
@@ -648,7 +667,7 @@ fn update_inputs(
             event: WindowEvent::CloseRequested,
             ..
         } => {
-            *control_flow = ControlFlow::Exit;
+            event_loop.exit();
             return false;
         }
         Event::WindowEvent {
@@ -730,48 +749,48 @@ fn update_inputs(
         Event::WindowEvent {
             event:
                 WindowEvent::KeyboardInput {
-                    input:
-                        KeyboardInput {
+                    event:
+                        winit::event::KeyEvent {
                             state: ElementState::Pressed,
-                            virtual_keycode: Some(key),
+                            physical_key: PhysicalKey::Code(key),
                             ..
                         },
                     ..
                 },
             ..
         } => match key {
-            VirtualKeyCode::Escape => {
-                *control_flow = ControlFlow::Exit;
+            KeyCode::Escape => {
+                event_loop.exit();
                 return false;
             }
-            VirtualKeyCode::PageDown => {
+            KeyCode::PageDown => {
                 scene.target_zoom *= 0.8;
             }
-            VirtualKeyCode::PageUp => {
+            KeyCode::PageUp => {
                 scene.target_zoom *= 1.25;
             }
-            VirtualKeyCode::Left => {
+            KeyCode::ArrowLeft => {
                 scene.target_scroll.x -= 50.0 / scene.target_zoom;
             }
-            VirtualKeyCode::Right => {
+            KeyCode::ArrowRight => {
                 scene.target_scroll.x += 50.0 / scene.target_zoom;
             }
-            VirtualKeyCode::Up => {
+            KeyCode::ArrowUp => {
                 scene.target_scroll.y -= 50.0 / scene.target_zoom;
             }
-            VirtualKeyCode::Down => {
+            KeyCode::ArrowDown => {
                 scene.target_scroll.y += 50.0 / scene.target_zoom;
             }
-            VirtualKeyCode::B => {
+            KeyCode::KeyB => {
                 scene.draw_background = !scene.draw_background;
             }
-            VirtualKeyCode::A => {
+            KeyCode::KeyA => {
                 scene.target_stroke_width /= 0.8;
             }
-            VirtualKeyCode::Z => {
+            KeyCode::KeyZ => {
                 scene.target_stroke_width *= 0.8;
             }
-            VirtualKeyCode::N => {
+            KeyCode::KeyN => {
                 *figure_index = (*figure_index + 1) % FIGURE_IDS.len();
                 figure.load(TessellationFigure::by_index(*figure_index));
                 let title = TessellationFigure::title(*figure_index);
@@ -779,7 +798,7 @@ fn update_inputs(
                 println!("{title}");
                 window.request_redraw();
             }
-            VirtualKeyCode::P => {
+            KeyCode::KeyP => {
                 *figure_index = (*figure_index + FIGURE_IDS.len() - 1) % FIGURE_IDS.len();
                 figure.load(TessellationFigure::by_index(*figure_index));
                 let title = TessellationFigure::title(*figure_index);
@@ -787,11 +806,11 @@ fn update_inputs(
                 println!("{title}");
                 window.request_redraw();
             }
-            VirtualKeyCode::R => {
+            KeyCode::KeyR => {
                 palette.rotate_left(1);
                 window.request_redraw();
             }
-            VirtualKeyCode::S => {
+            KeyCode::KeyS => {
                 fs::write(
                     "figure.json",
                     serde_json::to_string(figure)
@@ -800,7 +819,7 @@ fn update_inputs(
                 )
                 .expect("file error");
             }
-            VirtualKeyCode::L => {
+            KeyCode::KeyL => {
                 *figure = serde_json::from_str(
                     fs::read_to_string("figure.json")
                         .expect("file error")
@@ -809,7 +828,7 @@ fn update_inputs(
                 .expect("json error");
                 window.request_redraw();
             }
-            VirtualKeyCode::W => {
+            KeyCode::KeyW => {
                 let svgbackend = Box::new(SVGBackend);
                 let m: Transform =
                     Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
@@ -826,8 +845,6 @@ fn update_inputs(
     scene.scroll = scene.scroll + (scene.target_scroll - scene.scroll) / 3.0;
     scene.stroke_width =
         scene.stroke_width + (scene.target_stroke_width - scene.stroke_width) / 5.0;
-
-    *control_flow = ControlFlow::Poll;
 
     true
 }
