@@ -1,3 +1,4 @@
+use crate::render::palette::{Palette, CLASSIC};
 use crate::tessellationfigure::TessellationFigure;
 use crate::tessellationline::{Point, Transform};
 
@@ -59,8 +60,23 @@ impl Compose for SVGBackend {
     }
 
     fn compose_tiling(&self, figure: &TessellationFigure, m: &Transform) -> Option<SVG> {
+        self.compose_tiling_with_palette(figure, m, &CLASSIC)
+    }
+}
+
+impl SVGBackend {
+    /// Compose a tiling whose tiles are coloured from `palette`.
+    pub fn compose_tiling_with_palette(
+        &self,
+        figure: &TessellationFigure,
+        m: &Transform,
+        palette: &Palette,
+    ) -> Option<SVG> {
+        let colors = palette.css();
+        if colors.is_empty() {
+            return None;
+        }
         let mut document = Document::new().set("viewBox", (0, 0, 400, 400));
-        let colors = ["red", "green", "blue", "black"];
 
         let points = figure
             .points()
@@ -89,7 +105,7 @@ impl Compose for SVGBackend {
             let t = placement.transform.then(m);
             let tile_figure = Use::new()
                 .set("href", "#figure")
-                .set("fill", colors[placement.color % ncolors])
+                .set("fill", colors[placement.color % ncolors].as_str())
                 .set(
                     "transform",
                     format!(
@@ -100,19 +116,23 @@ impl Compose for SVGBackend {
             document.append(tile_figure);
         }
 
-        let edit_figure = Use::new()
-            .set(
-                "transform",
-                format!(
-                    "matrix({},{},{},{},{},{})",
-                    m.m11, m.m12, m.m21, m.m22, m.m31, m.m32
-                ),
-            )
-            .set("stroke", "yellow")
-            .set("stroke-width", "3px")
-            .set("fill", "none")
-            .set("href", "#figure");
-        document.append(edit_figure);
+        // The edited tile is outlined twice: a light halo below, so the outline
+        // stays visible on dark tiles, and a dark line above, so it stays
+        // visible on light ones. A single colour would disappear into some
+        // palette entries.
+        let transform = format!(
+            "matrix({},{},{},{},{},{})",
+            m.m11, m.m12, m.m21, m.m22, m.m31, m.m32
+        );
+        for (stroke, width) in [("#ffffff", "6px"), ("#000000", "2px")] {
+            let edit_figure = Use::new()
+                .set("transform", transform.as_str())
+                .set("stroke", stroke)
+                .set("stroke-width", width)
+                .set("fill", "none")
+                .set("href", "#figure");
+            document.append(edit_figure);
+        }
 
         Some(document)
     }
@@ -151,5 +171,22 @@ mod tests {
         let svg_document = svgbackend.compose(&f, &m).unwrap();
         let expected_svg = "<svg viewBox=\"0 0 400 400\" xmlns=\"http://www.w3.org/2000/svg\">\n<defs>\n<path d=\"M0,0 L1,0 L1,1 L0,1 z\" id=\"figure\" vector-effect=\"non-scaling-stroke\"/>\n</defs>\n<use fill=\"none\" href=\"#figure\" stroke=\"yellow\" stroke-width=\"3px\" transform=\"matrix(100,0,0,100,100,100)\"/>\n</svg>";
         assert_eq!(svg_document.get_data(), expected_svg);
+    }
+
+    #[test]
+    fn test_tiling_uses_the_palette() {
+        use crate::render::palette::ALHAMBRA;
+
+        let f = TessellationFigure::square();
+        let m: Transform =
+            Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
+
+        let svg_document = SVGBackend
+            .compose_tiling_with_palette(&f, &m, &ALHAMBRA)
+            .unwrap()
+            .get_data();
+        assert!(svg_document.contains("fill=\"#c96c9b\""), "{svg_document}");
+        assert!(svg_document.contains("fill=\"#568783\""), "{svg_document}");
+        assert!(!svg_document.contains("fill=\"red\""), "{svg_document}");
     }
 }

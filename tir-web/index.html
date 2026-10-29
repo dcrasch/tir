@@ -5,12 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1"/>
     <title>Tessellations</title>
     <base data-trunk-public-url/>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 1rem; }
+      .toolbar { display: flex; align-items: center; gap: 0.5rem; }
+      .toolbar + .toolbar { margin-top: 0.4rem; }
+      .toolbar label { width: 4.5rem; }
+      .toolbar select { font: inherit; padding: 0.25rem 0.35rem; max-width: 34rem; }
+      #editor { margin-top: 0.75rem; }
+      footer { margin-top: 0.75rem; }
+    </style>
   </head>
   <body>
+    <div class="toolbar">
+      <label for="figure-select">Tile</label>
+      <select id="figure-select"></select>
+    </div>
+    <div class="toolbar">
+      <label for="color-select">Colours</label>
+      <select id="color-select"></select>
+    </div>
     <div id="editor" style="width:400px; height:400px">
     </div>
     <footer>
-      <small>&copy; Copyright 2023, David Rasch</small> &nbsp;
+      <small>&copy; Copyright 2023&ndash;2026, David Rasch</small> &nbsp;
       <a href="https://github.com/dcrasch/tir/">View Source code</a>
     </footer>
   </body>

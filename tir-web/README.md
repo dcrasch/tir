@@ -4,6 +4,23 @@
 
 https://dcrasch.github.io/tir/
 
+## Usage
+
+The **Tile** menu lists all 35 symmetries grouped by tile shape, e.g.
+`Triangles` with `rotated`, `4-way rotation` and `rotated and flipped` beneath
+it. Shapes are ordered by their lowest isohedral (IH) type and the variants
+within a shape by IH, so the list reads roughly by IH number. Each entry names
+the shape and its IH type as well as the variant — `Pentagons, rotated — TCTCC,
+IH 23, p2` — because a closed menu shows only the selected entry, never the
+shape heading. The window title shows the same details. Press `n` for the next
+figure and `p` for the previous one, or click a handle in the drawing and drag
+it to reshape the tile.
+
+The **Colours** menu below it switches the tile palette: **Alhambra** (the
+default, four ceramic colours from the Alhambra "Brilliant" palette),
+**Classic** (red, green, blue and black) and **Grayscale**. Press `c` to cycle
+the palettes.
+
 ## Build the project
 
 ### Requirements
@@ -61,4 +78,4 @@ trunk serve --release --open
 
 ## Copyright
 
-Tessellation in Rust Copyright (c) 2022 David Rasch
+Tessellation in Rust Copyright (c) 2022-2026 David Rasch
