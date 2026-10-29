@@ -8,7 +8,7 @@ license = "GPL-3.0"
 crate-type = ["cdylib", "rlib"]
 
 [[bin]]
-name = "tir_app"
+name = "tir-app"
 path = "src/main.rs"
 
 [features]

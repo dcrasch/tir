@@ -5,6 +5,7 @@ use tessellations::tessellationline::Point;
 
 use crate::figure::{FigureKind, Settings, View};
 use crate::input::handle_input;
+use crate::picker::Picker;
 use crate::render::{paint_editor, paint_tiles};
 use crate::ui::MenuAction;
 
@@ -86,13 +87,17 @@ pub struct TirApp {
     pub insets_for_size: Option<Vec2>,
     /// System font size bucket; scales the hamburger and its menu.
     pub font_scale: FontScale,
+    /// Whether the "pick symmetry" window is showing.
+    pub picker_open: bool,
+    /// Cached picker contents; rebuilt when the palette changes.
+    pub picker: Option<Picker>,
 }
 
 impl Default for TirApp {
     fn default() -> Self {
         let mut app = Self {
-            kind: FigureKind::Square,
-            figure: FigureKind::Square.build(),
+            kind: FigureKind::ALL[0],
+            figure: FigureKind::ALL[0].build(),
             selected: None,
             home_center: Point::new(0.5, 0.5),
             settings: Settings::default(),
@@ -101,6 +106,8 @@ impl Default for TirApp {
             #[cfg(target_os = "android")]
             insets_for_size: None,
             font_scale: FontScale::Default,
+            picker_open: false,
+            picker: None,
         };
         app.reset();
         app
@@ -121,13 +128,48 @@ impl TirApp {
         self.home_center = min.lerp(max, 0.5);
     }
 
-    /// Act on a menu choice that changes the figure.
+    /// Act on a menu choice.
     pub fn apply(&mut self, action: MenuAction) {
         match action {
-            MenuAction::SelectFigure(kind) => self.kind = kind,
-            MenuAction::Reset => {}
+            MenuAction::SelectFigure(kind) => {
+                self.kind = kind;
+                self.reset();
+            }
+            MenuAction::Reset => self.reset(),
+            MenuAction::PickSymmetry => self.open_picker(),
         }
-        self.reset();
+    }
+
+    /// Show the "pick symmetry" window, rebuilding the thumbnails if the palette
+    /// changed since they were cached. The current figure is left untouched.
+    fn open_picker(&mut self) {
+        self.ensure_picker();
+        self.picker_open = true;
+    }
+
+    /// Rebuild the cached picker if its thumbnails no longer match the palette.
+    fn ensure_picker(&mut self) {
+        if self
+            .picker
+            .as_ref()
+            .is_none_or(|p| !p.matches(self.settings.palette))
+        {
+            self.picker = Some(Picker::build(self.settings.palette));
+        }
+    }
+
+    /// Draw the picker and switch to the figure the user clicked.
+    fn show_picker(&mut self, ctx: &egui::Context) {
+        if !self.picker_open {
+            return;
+        }
+        self.ensure_picker();
+        let Some(picker) = self.picker.as_ref() else {
+            return;
+        };
+        if let Some(kind) = picker.show(ctx, &mut self.picker_open, self.kind, self.font_scale) {
+            self.apply(MenuAction::SelectFigure(kind));
+        }
     }
 
     /// Unique polygon points of the figure (crate emits shared endpoints twice).
@@ -237,8 +279,7 @@ impl eframe::App for TirApp {
                         self.font_scale.apply(ui.style_mut());
                         ui.heading(self.kind.label());
                         ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                            action =
-                                crate::ui::menu(ui, self.kind, &mut self.settings, self.font_scale);
+                            action = crate::ui::menu(ui, &mut self.settings, self.font_scale);
                         });
                     });
                     if let Some(action) = action {
@@ -247,6 +288,8 @@ impl eframe::App for TirApp {
                 });
             },
         );
+
+        self.show_picker(ui.ctx());
 
         #[cfg(feature = "screenshot")]
         crate::utilities::screenshot::handle(ui.ctx());
@@ -280,7 +323,7 @@ impl eframe::App for TirApp {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::figure::View;
+    use crate::figure::{Palette, View};
     use eframe::egui::Pos2;
     use tessellations::tessellationline::{Point, PointIndexPath};
 
@@ -442,7 +485,7 @@ mod tests {
         app.apply(MenuAction::Reset);
         assert_eq!(app.polygon(), pristine);
         assert_eq!(app.selected, None);
-        assert_eq!(app.kind, FigureKind::Square);
+        assert_eq!(app.kind, FigureKind::ALL[0]);
     }
 
     #[test]
@@ -465,6 +508,32 @@ mod tests {
         }
         // View settings survive figure changes.
         assert_eq!(app.settings.zoom, 222.0);
+    }
+
+    #[test]
+    fn pick_symmetry_opens_without_changing_the_figure() {
+        let mut app = TirApp::default();
+        app.settings.palette = Palette::Grayscale;
+        let pristine = app.polygon();
+        app.apply(MenuAction::PickSymmetry);
+        assert!(app.picker_open);
+        assert_eq!(app.kind, FigureKind::ALL[0]);
+        assert_eq!(app.polygon(), pristine);
+        let picker = app.picker.as_ref().expect("picker built");
+        assert_eq!(picker.card_count(), 35);
+        assert!(picker.matches(Palette::Grayscale));
+
+        // Reopening with the same palette keeps the cached thumbnails.
+        let cached = std::ptr::from_ref(app.picker.as_ref().unwrap());
+        app.picker_open = false;
+        app.apply(MenuAction::PickSymmetry);
+        assert!(std::ptr::eq(cached, app.picker.as_ref().unwrap()));
+
+        // A palette change rebuilds them.
+        app.settings.palette = Palette::Original;
+        app.picker_open = false;
+        app.apply(MenuAction::PickSymmetry);
+        assert!(app.picker.as_ref().unwrap().matches(Palette::Original));
     }
 
     #[test]
@@ -518,6 +587,35 @@ mod tests {
                     app.ui(ui, &mut frame);
                 });
                 // No renderer here: drop the font atlas upload explicitly.
+                out.textures_delta.clear();
+            }
+        }
+    }
+
+    /// The picker window must draw without panicking at any font scale or
+    /// screen size (including a phone-sized one).
+    #[test]
+    fn picker_window_runs_headless() {
+        use eframe::App as _;
+        let ctx = egui::Context::default();
+        let mut app = TirApp::default();
+        app.apply(MenuAction::PickSymmetry);
+        assert!(app.picker_open);
+        for size in [egui::vec2(900.0, 700.0), egui::vec2(360.0, 640.0)] {
+            for font_scale in [
+                FontScale::Small,
+                FontScale::Large,
+                FontScale::ExtraLarge(1.8),
+            ] {
+                app.font_scale = font_scale;
+                let input = || egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, size)),
+                    ..Default::default()
+                };
+                let mut out = ctx.run_ui(input(), |ui| {
+                    let mut frame = eframe::Frame::_new_kittest();
+                    app.ui(ui, &mut frame);
+                });
                 out.textures_delta.clear();
             }
         }

@@ -53,5 +53,9 @@ fn create_app(cc: &eframe::CreationContext<'_>, font_scale: f32) -> AppResult {
     if std::env::var_os("TIR_DEMO").is_some() {
         app.demo_edit();
     }
+    #[cfg(feature = "screenshot")]
+    if std::env::var_os("TIR_PICKER").is_some() {
+        app.apply(crate::ui::MenuAction::PickSymmetry);
+    }
     Ok(Box::new(app))
 }

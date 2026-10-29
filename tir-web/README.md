@@ -6,20 +6,24 @@ https://dcrasch.github.io/tir/
 
 ## Usage
 
-The **Tile** menu lists all 35 symmetries grouped by tile shape, e.g.
-`Triangles` with `rotated`, `4-way rotation` and `rotated and flipped` beneath
-it. Shapes are ordered by their lowest isohedral (IH) type and the variants
-within a shape by IH, so the list reads roughly by IH number. Each entry names
-the shape and its IH type as well as the variant — `Pentagons, rotated — TCTCC,
-IH 23, p2` — because a closed menu shows only the selected entry, never the
-shape heading. The window title shows the same details. Press `n` for the next
-figure and `p` for the previous one, or click a handle in the drawing and drag
-it to reshape the tile.
+The app opens on a **gallery** of all 35 symmetries. They are grouped into the
+tiled.art chart categories — **1-way**, **2-way**, **2-way with flip**,
+**3-way**, **4-way**, **4-way with flip** and **6-way** — and each card shows a
+thumbnail of the tiling, the tile name, its Heesch type, IH number and
+wallpaper group. Click a card to open the editor on that figure.
 
-The **Colours** menu below it switches the tile palette: **Alhambra** (the
-default, four ceramic colours from the Alhambra "Brilliant" palette),
-**Classic** (red, green, blue and black) and **Grayscale**. Press `c` to cycle
-the palettes.
+The gallery and the editor are two routes of the same page, selected by the URL
+fragment: `#/` is the gallery and `#/edit/<id>` is the editor (for example
+`#/edit/quad4`). The browser back and forward buttons move between them, and
+the editor's **&larr; All tessellations** link returns to the gallery.
+
+In the editor, the figure is the one opened from the gallery. Press `n` for the
+next figure and `p` for the previous one (the window title and the URL fragment
+follow), or click a handle in the drawing and drag it to reshape the tile.
+
+The **Colours** menu switches the tile palette: **Alhambra** (the default, four
+ceramic colours from the Alhambra "Brilliant" palette), **Classic** (red,
+green, blue and black) and **Grayscale**. Press `c` to cycle the palettes.
 
 ## Build the project
 

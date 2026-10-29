@@ -6,34 +6,89 @@
     <title>Tessellations</title>
     <base href="/tir/" />
     <style>
-      body { font-family: system-ui, sans-serif; margin: 1rem; }
+      :root { color-scheme: light; }
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+        color: #1b1c47;
+        background: #faf7f2;
+      }
+      header {
+        padding: 1rem 1.25rem 0.5rem;
+        border-bottom: 1px solid #ece5db;
+      }
+      header h1 { margin: 0; font-size: 1.4rem; }
+      header h1 a { color: inherit; text-decoration: none; }
+      header p { margin: 0.25rem 0 0; color: #6b6b6b; font-size: 0.85rem; }
+      /* Hide the gallery tagline while the editor route is open. */
+      body:has(#editor-page:not([hidden])) header p { display: none; }
+      main { padding: 0 1.25rem 2rem; }
+      .category { margin-top: 1.5rem; }
+      .category h2 {
+        margin: 0 0 0.6rem;
+        font-size: 0.95rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        color: #568783;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+        gap: 0.75rem;
+      }
+      .card {
+        display: block;
+        border: 1px solid #e3dccf;
+        border-radius: 8px;
+        overflow: hidden;
+        background: #fff;
+        color: inherit;
+        text-decoration: none;
+        transition: box-shadow 0.15s ease, transform 0.15s ease;
+      }
+      .card:hover, .card:focus {
+        box-shadow: 0 6px 16px rgba(27, 28, 71, 0.18);
+        transform: translateY(-2px);
+        outline: none;
+      }
+      .card svg { display: block; width: 100%; height: auto; }
+      .card .caption { padding: 0.45rem 0.55rem 0.6rem; font-size: 0.82rem; line-height: 1.25; }
+      .card .caption .meta { margin-top: 0.15rem; color: #6b6b6b; font-size: 0.72rem; }
+      #editor-page { padding: 0 1.25rem 2rem; }
+      .back { display: inline-block; margin: 1rem 0 0.75rem; color: #568783; }
       .toolbar { display: flex; align-items: center; gap: 0.5rem; }
       .toolbar + .toolbar { margin-top: 0.4rem; }
       .toolbar label { width: 4.5rem; }
       .toolbar select { font: inherit; padding: 0.25rem 0.35rem; max-width: 34rem; }
       #editor { margin-top: 0.75rem; }
-      footer { margin-top: 0.75rem; }
+      footer { margin-top: 0.75rem; color: #6b6b6b; }
     </style>
-  <link rel="modulepreload" href="/tir/tir-web-75912c70dcc91307.js" crossorigin="anonymous" integrity="sha384-zHCvN/YwakL4pL8jiA2TcTU2pq6y/sSk+MZiIuhLLKclIExYOfd5vrzEzuvyhmfn"><link rel="preload" href="/tir/tir-web-7441505e453b63c6_bg.wasm" crossorigin="anonymous" integrity="sha384-+GiUNHdLT97f1iV+7wG7lMQgyMIcEm4ovVWvE9BvayQ/xXIC6PRaErXwUEcC3u8z" as="fetch" type="application/wasm"></head>
+  <link rel="modulepreload" href="/tir/tir-web-de454808f12609b4.js" crossorigin="anonymous" integrity="sha384-R927V9BIyEuMGj9i4vyr0qPh6EbaT0mSx6qQke2EPi7NQVQ1dGIM2SXULBF2kHom"><link rel="preload" href="/tir/tir-web-9c5d8948b741bfe4_bg.wasm" crossorigin="anonymous" integrity="sha384-MlzyJYaLFOdzBaSuT+WjwrK2n9aC4BIXeFaCjQ49cDM1ObwhtQB4xGNRbZnwoarb" as="fetch" type="application/wasm"></head>
   <body>
-    <div class="toolbar">
-      <label for="figure-select">Tile</label>
-      <select id="figure-select"></select>
-    </div>
-    <div class="toolbar">
-      <label for="color-select">Colours</label>
-      <select id="color-select"></select>
-    </div>
-    <div id="editor" style="width:400px; height:400px">
-    </div>
-    <footer>
-      <small>&copy; Copyright 2023&ndash;2026, David Rasch</small> &nbsp;
-      <a href="https://github.com/dcrasch/tir/">View Source code</a>
-    </footer>
+    <header>
+      <h1><a href="#/">Tessellations</a></h1>
+      <p>Pick a symmetry to start editing.</p>
+    </header>
+
+    <main id="gallery" aria-label="All tessellation symmetries"></main>
+
+    <section id="editor-page" hidden>
+      <a class="back" href="#/">&larr; All tessellations</a>
+      <div class="toolbar">
+        <label for="color-select">Colours</label>
+        <select id="color-select"></select>
+      </div>
+      <div id="editor" style="width:400px; height:400px">
+      </div>
+      <footer>
+        <small>&copy; Copyright 2023&ndash;2026, David Rasch</small> &nbsp;
+        <a href="https://github.com/dcrasch/tir/">View Source code</a>
+      </footer>
+    </section>
   
 <script type="module">
-import init, * as bindings from '/tir/tir-web-75912c70dcc91307.js';
-const wasm = await init({ module_or_path: '/tir/tir-web-7441505e453b63c6_bg.wasm' });
+import init, * as bindings from '/tir/tir-web-de454808f12609b4.js';
+const wasm = await init({ module_or_path: '/tir/tir-web-9c5d8948b741bfe4_bg.wasm' });
 
 
 window.wasmBindings = bindings;

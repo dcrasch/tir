@@ -78,7 +78,7 @@ mod tests {
         fn new() -> Self {
             Self {
                 ctx: egui::Context::default(),
-                figure: FigureKind::Square.build(),
+                figure: FigureKind::ALL[0].build(),
                 selected: None,
             }
         }

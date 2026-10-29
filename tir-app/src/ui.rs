@@ -11,7 +11,9 @@ const MENU_TEXT_SCALE: f32 = 1.4;
 /// Something the app has to act on after the menu was shown.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum MenuAction {
-    /// Switch to another base figure.
+    /// Open the "pick symmetry" window.
+    PickSymmetry,
+    /// Switch to the chosen figure (the picker's selection).
     SelectFigure(FigureKind),
     /// Discard edits and reload the current figure.
     Reset,
@@ -21,7 +23,6 @@ pub enum MenuAction {
 /// place; figure changes are returned so the app can rebuild the figure.
 pub fn menu(
     ui: &mut egui::Ui,
-    kind: FigureKind,
     settings: &mut Settings,
     font_scale: FontScale,
 ) -> Option<MenuAction> {
@@ -48,14 +49,9 @@ pub fn menu(
         .config(config)
         .ui(ui, |ui| {
             ui.set_min_width(180.0 * MENU_TEXT_SCALE * font_scale.factor());
-            ui.label(egui::RichText::new("Figure").weak());
-            for k in FigureKind::ALL {
-                if ui.selectable_label(kind == k, k.label()).clicked() {
-                    if kind != k {
-                        action = Some(MenuAction::SelectFigure(k));
-                    }
-                    ui.close();
-                }
+            if ui.button("Pick symmetry…").clicked() {
+                action = Some(MenuAction::PickSymmetry);
+                ui.close();
             }
             ui.separator();
             ui.label(egui::RichText::new("Palette").weak());

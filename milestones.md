@@ -57,10 +57,12 @@ all 35 with `n`/`p`; the title shows
 `Tessellations of {name} ({Heesch}, IH {ih}, {group})`. The old standalone
 `brick()` and `TessellationPlane` helpers have been removed.
 
-`tir-web` adds a **Tile** menu that lists all 35 figures grouped by shape
-(`figure_groups()`), and a **Colours** menu for the Alhambra, Classic and
-Grayscale palettes (`c` cycles them). The palettes live in
-`tessellations/src/render/palette.rs` and are shared with `tir-wgpu`.
+`tir-web` opens on a gallery of all 35 figures grouped by the tiled.art chart
+categories (`figure_categories()`), and a card click starts the editor on that
+figure. The editor has a **Colours** menu for the Alhambra, Classic and
+Grayscale palettes (`c` cycles them) and cycles figures with `n`/`p`. The
+palettes live in `tessellations/src/render/palette.rs` and are shared with
+`tir-wgpu`.
 
 `tir-wgpu` uses the Alhambra palette (Amalfi, Capri, Canary and Denim), applies
 a subtle screen-space grain, and cycles the colour assignment with `r`. Its
@@ -260,14 +262,24 @@ After this milestone all 35 symmetries are done.
 - [x] Share palettes between the renderers (`render/palette.rs`): Alhambra,
       Classic and Grayscale. `tir-web` has a **Colours** menu and `c` cycles
       them; `tir-wgpu` starts on Alhambra and `r` rotates it.
-- [x] Tile picker in `tir-web`: a **Tile** menu lists all 35 figures grouped by
+- [x] Tile picker in `tir-web`: a **Tile** menu listed all 35 figures grouped by
       shape (`figure_groups()`), ordered by lowest IH and then by variant IH.
-      Each entry shows name, Heesch, IH and group. `tir` and `tir-wgpu` still
-      cycle with `n`/`p`.
+      Superseded by the gallery page below, so the editor no longer has a tile
+      menu; `tir`, `tir-web` and `tir-wgpu` cycle with `n`/`p`.
+- [x] Gallery page in `tir-web`: the app opens on all 35 symmetries grouped by
+      the tiled.art chart categories (`figure_categories()`), each with a
+      thumbnail of the tiling; clicking a card starts the editor on that
+      figure. The gallery and editor are the `#/` and `#/edit/<id>` routes of
+      the same page, so the browser back and forward buttons work.
+- [x] Tile picker in `tir-app`: the hamburger menu's figure list (Square,
+      Triangle, Square 90°, Diamond, Hexagon) is replaced by a **Pick
+      symmetry…** entry that opens a window with all 35 figures grouped by the
+      tiled.art chart categories (`figure_categories()`), each shown as a
+      thumbnail. Thumbnails are triangulated once per palette and cached.
 - [ ] Non-rigid types: allow moving base-polygon vertices (within the
       constraints of the type) instead of only edge points.
 - [x] Rebuild `docs/` (web demo) with all figures; the new bundle includes the
-      **Tile** and **Colours** menus.
+      gallery page and the **Colours** menu.
 - [x] README: full supported-symmetry table (id, tile name, Heesch, IH, group
       and colour count for all 35 figures), alongside the existing JSON format,
       title, `tir-web` menu and `tir-wgpu` palette notes.

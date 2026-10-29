@@ -416,6 +416,49 @@ pub fn figure_groups() -> Vec<(&'static str, Vec<usize>)> {
     groups
 }
 
+/// Figure indices grouped into the symmetry categories of the tiled.art
+/// "Create a new tessellation" chart.
+///
+/// tiled.art groups the symmetries by how many orientations a tile takes and
+/// whether it is flipped: `1-way`, `2-way`, `2-way with flip`, `3-way`,
+/// `4-way`, `4-way with flip` and `6-way`. The categories correspond to the
+/// wallpaper groups, so each figure is placed by its [`FigureInfo::group`].
+/// Categories are returned in chart order, the figures within one in registry
+/// order.
+pub fn figure_categories() -> Vec<(&'static str, Vec<usize>)> {
+    let category = |group: &str| match group {
+        "p1" | "cm" => "1-way",
+        "p2" | "pmg" => "2-way",
+        "pg" => "2-way with flip",
+        "p3" | "p31m" => "3-way",
+        "p4" | "p4g" => "4-way",
+        "pgg" => "4-way with flip",
+        "p6" => "6-way",
+        _ => "",
+    };
+    let order = [
+        "1-way",
+        "2-way",
+        "2-way with flip",
+        "3-way",
+        "4-way",
+        "4-way with flip",
+        "6-way",
+    ];
+    order
+        .iter()
+        .map(|&name| {
+            let members = FIGURES
+                .iter()
+                .enumerate()
+                .filter(|(_, info)| category(info.group) == name)
+                .map(|(index, _)| index)
+                .collect();
+            (name, members)
+        })
+        .collect()
+}
+
 impl TessellationFigure {
     /// All 35 tessellation figures, in [`FIGURE_IDS`] order.
     pub fn all() -> Vec<Self> {
@@ -604,5 +647,57 @@ mod tests {
             variants,
             vec!["4-way rotation", "rotated", "rotated and flipped"]
         );
+    }
+
+    #[test]
+    fn test_categories_hold_every_figure_once() {
+        let mut seen: Vec<usize> = figure_categories()
+            .iter()
+            .flat_map(|(_, members)| members.iter().copied())
+            .collect();
+        seen.sort_unstable();
+        assert_eq!(seen, (0..FIGURE_IDS.len()).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn test_categories_are_the_tiled_art_chart() {
+        let categories = figure_categories();
+        let names: Vec<&str> = categories.iter().map(|(name, _)| *name).collect();
+        assert_eq!(
+            names,
+            vec![
+                "1-way",
+                "2-way",
+                "2-way with flip",
+                "3-way",
+                "4-way",
+                "4-way with flip",
+                "6-way",
+            ]
+        );
+        let sizes: Vec<usize> = categories.iter().map(|(_, m)| m.len()).collect();
+        assert_eq!(sizes, vec![4, 8, 4, 3, 4, 8, 4]);
+    }
+
+    #[test]
+    fn test_category_of_each_figure() {
+        let categories = figure_categories();
+        let category = |id: &str| {
+            let index = TessellationFigure::id_index(id).unwrap();
+            categories
+                .iter()
+                .find(|(_, members)| members.contains(&index))
+                .map(|(name, _)| *name)
+                .unwrap()
+        };
+        assert_eq!(category("quad1"), "1-way");
+        assert_eq!(category("quad1sym"), "1-way");
+        assert_eq!(category("pent2"), "2-way");
+        assert_eq!(category("hex2sym"), "2-way");
+        assert_eq!(category("hex2flipend"), "2-way with flip");
+        assert_eq!(category("quad3sym"), "3-way");
+        assert_eq!(category("pent4"), "4-way");
+        assert_eq!(category("hex4flipalone"), "4-way with flip");
+        assert_eq!(category("tri6alone"), "6-way");
     }
 }

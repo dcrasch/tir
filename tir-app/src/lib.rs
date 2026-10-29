@@ -11,6 +11,7 @@
 mod app;
 mod figure;
 mod input;
+mod picker;
 mod render;
 mod ui;
 

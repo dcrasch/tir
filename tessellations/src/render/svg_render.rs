@@ -72,6 +72,22 @@ impl SVGBackend {
         m: &Transform,
         palette: &Palette,
     ) -> Option<SVG> {
+        self.compose_tiling_named(figure, m, palette, "figure")
+    }
+
+    /// Compose a tiling whose tiles are coloured from `palette`, with `id` as
+    /// the id of the tile-outline `<path>`.
+    ///
+    /// Every tiling inlined into the same HTML document needs its own `id`:
+    /// `<use href="#…">` resolves against the whole document, so two inlined
+    /// tilings that both define `#figure` would both draw the first one's tile.
+    pub fn compose_tiling_named(
+        &self,
+        figure: &TessellationFigure,
+        m: &Transform,
+        palette: &Palette,
+        id: &str,
+    ) -> Option<SVG> {
         let colors = palette.css();
         if colors.is_empty() {
             return None;
@@ -95,16 +111,17 @@ impl SVGBackend {
         let path = Path::new()
             .set("vector-effect", "non-scaling-stroke")
             .set("d", pb)
-            .set("id", "figure");
+            .set("id", id);
 
         let defs = Definitions::new().add(path);
         document.append(defs);
 
+        let href = format!("#{id}");
         let ncolors = figure.colors.clamp(1, colors.len());
         for placement in figure.placements(12.0, 12.0) {
             let t = placement.transform.then(m);
             let tile_figure = Use::new()
-                .set("href", "#figure")
+                .set("href", href.as_str())
                 .set("fill", colors[placement.color % ncolors].as_str())
                 .set(
                     "transform",
@@ -130,7 +147,7 @@ impl SVGBackend {
                 .set("stroke", stroke)
                 .set("stroke-width", width)
                 .set("fill", "none")
-                .set("href", "#figure");
+                .set("href", href.as_str());
             document.append(edit_figure);
         }
 
@@ -188,5 +205,28 @@ mod tests {
         assert!(svg_document.contains("fill=\"#c96c9b\""), "{svg_document}");
         assert!(svg_document.contains("fill=\"#568783\""), "{svg_document}");
         assert!(!svg_document.contains("fill=\"red\""), "{svg_document}");
+    }
+
+    #[test]
+    fn test_tiling_uses_the_given_id() {
+        use crate::render::palette::ALHAMBRA;
+
+        let f = TessellationFigure::square();
+        let m: Transform =
+            Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
+
+        let svg_document = SVGBackend
+            .compose_tiling_named(&f, &m, &ALHAMBRA, "figure-quad1")
+            .unwrap()
+            .get_data();
+        assert!(
+            svg_document.contains("id=\"figure-quad1\""),
+            "{svg_document}"
+        );
+        assert!(
+            svg_document.contains("href=\"#figure-quad1\""),
+            "{svg_document}"
+        );
+        assert!(!svg_document.contains("\"#figure\""), "{svg_document}");
     }
 }

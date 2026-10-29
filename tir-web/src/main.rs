@@ -10,14 +10,23 @@ use wasm_bindgen::prelude::*;
 use wasm_bindgen::JsCast;
 
 use tessellations::render::*;
-use tessellations::tessellationfigure::{figure_groups, TessellationFigure, FIGURES};
+use tessellations::tessellationfigure::{
+    figure_categories, TessellationFigure, FIGURES, FIGURE_IDS,
+};
 use tessellations::tessellationline::{Point, PointIndexPath, Transform};
+
+/// Transform that maps tile coordinates into the 400x400 SVG viewBox.
+fn view_transform() -> Transform {
+    Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0))
+}
 
 /// Editor state shared by the event handlers.
 struct Scene {
     context: web_sys::HtmlElement,
-    figure_select: web_sys::HtmlSelectElement,
     palette_select: web_sys::HtmlSelectElement,
+    /// The gallery landing page and the editor page, toggled by the route.
+    gallery: web_sys::HtmlElement,
+    editor_page: web_sys::HtmlElement,
     figure: RefCell<TessellationFigure>,
     figure_index: Cell<usize>,
     palette_index: Cell<usize>,
@@ -31,16 +40,15 @@ impl Scene {
     }
 
     fn draw(&self) {
-        let m: Transform =
-            Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
+        let m = view_transform();
         let figure = self.figure.borrow();
         let svg_document = SVGBackend
-            .compose_tiling_with_palette(&figure, &m, self.palette())
+            .compose_tiling_named(&figure, &m, self.palette(), "editor-figure")
             .unwrap();
         self.context.set_inner_html(&svg_document.get_data());
     }
 
-    /// Load the figure at `index`, redraw it and keep the title and menus in sync.
+    /// Load the figure at `index`, redraw it and keep the title in sync.
     fn load_figure(&self, index: usize) {
         let index = index % FIGURES.len();
         self.figure_index.set(index);
@@ -50,7 +58,6 @@ impl Scene {
         if let Some(document) = web_sys::window().and_then(|w| w.document()) {
             document.set_title(&TessellationFigure::title(index));
         }
-        self.figure_select.set_value(&index.to_string());
         self.draw();
     }
 
@@ -60,6 +67,51 @@ impl Scene {
         self.palette_index.set(index);
         self.palette_select.set_value(&index.to_string());
         self.draw();
+    }
+
+    /// Show the gallery or the editor, depending on the URL hash.
+    ///
+    /// `#/edit/<id>` opens the editor on that figure; any other hash (including
+    /// none) shows the gallery. Called at start-up and on every `hashchange`,
+    /// so the browser back and forward buttons move between the two pages.
+    fn route(&self) {
+        let hash = web_sys::window()
+            .and_then(|w| w.location().hash().ok())
+            .unwrap_or_default();
+        match hash
+            .strip_prefix("#/edit/")
+            .and_then(TessellationFigure::id_index)
+        {
+            Some(index) => {
+                self.gallery.set_hidden(true);
+                self.editor_page.set_hidden(false);
+                self.load_figure(index);
+            }
+            None => {
+                self.editor_page.set_hidden(true);
+                self.gallery.set_hidden(false);
+                if let Some(document) = web_sys::window().and_then(|w| w.document()) {
+                    document.set_title("Tessellations");
+                }
+            }
+        }
+    }
+
+    /// Navigate to the editor route for the figure at `index`.
+    fn open_figure(&self, index: usize) {
+        let id = FIGURE_IDS[index % FIGURE_IDS.len()];
+        self.set_hash(&format!("#/edit/{id}"));
+    }
+
+    /// True while the editor (rather than the gallery) is on screen.
+    fn editing(&self) -> bool {
+        !self.editor_page.hidden()
+    }
+
+    fn set_hash(&self, hash: &str) {
+        if let Some(window) = web_sys::window() {
+            let _ = window.location().set_hash(hash);
+        }
     }
 }
 
@@ -80,37 +132,47 @@ fn fill_select(
     Ok(())
 }
 
-/// Fill the tile menu with one `<optgroup>` per shape, ordered by IH number.
-///
-/// The option values are figure indices, so the shape headings are only a
-/// label: each variant still loads its own figure. Each option spells out the
-/// full name and IH number, because a closed `<select>` shows only the option
-/// text and never the optgroup heading.
-fn fill_tile_select(
+/// Build the gallery: one section per symmetry category, each holding a card
+/// with a thumbnail of the tiling that links to the editor for that figure.
+fn build_gallery(
     document: &web_sys::Document,
-    select: &web_sys::HtmlSelectElement,
+    gallery: &web_sys::HtmlElement,
 ) -> Result<(), JsValue> {
-    for (shape, members) in figure_groups() {
-        let group = document
-            .create_element("optgroup")?
-            .dyn_into::<web_sys::HtmlOptGroupElement>()?;
-        group.set_label(shape);
+    let m = view_transform();
+    for (category, members) in figure_categories() {
+        let section = document.create_element("section")?;
+        section.set_class_name("category");
+
+        let heading = document.create_element("h2")?;
+        heading.set_text_content(Some(category));
+        section.append_child(&heading)?;
+
+        let grid = document.create_element("div")?;
+        grid.set_class_name("grid");
         for index in members {
             let info = &FIGURES[index];
-            let option = document
-                .create_element("option")?
-                .dyn_into::<web_sys::HtmlOptionElement>()?;
-            option.set_value(&index.to_string());
-            option.set_text(&format!(
-                "{} — {}, IH {}, {}",
+            let figure = TessellationFigure::by_index(index);
+            let id = format!("figure-{}", info.id);
+            let Some(svg) = SVGBackend.compose_tiling_named(&figure, &m, &DEFAULT_PALETTE, &id)
+            else {
+                continue;
+            };
+            let card = document.create_element("a")?;
+            card.set_class_name("card");
+            card.set_attribute("href", &format!("#/edit/{}", info.id))?;
+            card.set_attribute("title", &info.name())?;
+            card.set_inner_html(&format!(
+                "{}\n<div class=\"caption\">{}<div class=\"meta\">{} · IH {} · {}</div></div>",
+                svg.get_data(),
                 info.name(),
                 info.heesch,
                 info.ih,
                 info.group
             ));
-            group.append_child(&option)?;
+            grid.append_child(&card)?;
         }
-        select.append_child(&group)?;
+        section.append_child(&grid)?;
+        gallery.append_child(&section)?;
     }
     Ok(())
 }
@@ -121,21 +183,25 @@ fn app(name: &str) -> Result<(), JsValue> {
         .get_element_by_id(name)
         .unwrap()
         .dyn_into::<web_sys::HtmlElement>()?;
-    let figure_select = document
-        .get_element_by_id("figure-select")
-        .unwrap()
-        .dyn_into::<web_sys::HtmlSelectElement>()?;
     let palette_select = document
         .get_element_by_id("color-select")
         .unwrap()
         .dyn_into::<web_sys::HtmlSelectElement>()?;
+    let gallery = document
+        .get_element_by_id("gallery")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlElement>()?;
+    let editor_page = document
+        .get_element_by_id("editor-page")
+        .unwrap()
+        .dyn_into::<web_sys::HtmlElement>()?;
 
-    fill_tile_select(&document, &figure_select)?;
     fill_select(
         &document,
         &palette_select,
         PALETTES.iter().map(|palette| palette.name.to_string()),
     )?;
+    build_gallery(&document, &gallery)?;
 
     let context = document
         .create_element("div")
@@ -145,8 +211,9 @@ fn app(name: &str) -> Result<(), JsValue> {
 
     let scene = Rc::new(Scene {
         context,
-        figure_select,
         palette_select,
+        gallery,
+        editor_page,
         figure: RefCell::new(TessellationFigure::by_index(0)),
         figure_index: Cell::new(0),
         palette_index: Cell::new(0),
@@ -157,21 +224,8 @@ fn app(name: &str) -> Result<(), JsValue> {
     scene.set_palette(0);
     scene.load_figure(0);
 
-    let m1: Transform = Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0));
+    let m1: Transform = view_transform();
     let mi = m1.inverse().unwrap();
-
-    {
-        let target = scene.figure_select.clone();
-        let scene = scene.clone();
-
-        let closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
-            if let Ok(i) = scene.figure_select.value().parse::<usize>() {
-                scene.load_figure(i);
-            }
-        }) as Box<dyn FnMut(_)>);
-        target.add_event_listener_with_callback("change", closure.as_ref().unchecked_ref())?;
-        closure.forget();
-    }
 
     {
         let target = scene.palette_select.clone();
@@ -256,6 +310,9 @@ fn app(name: &str) -> Result<(), JsValue> {
         let scene = scene.clone();
 
         let closure = Closure::wrap(Box::new(move |event: web_sys::KeyboardEvent| {
+            if !scene.editing() {
+                return;
+            }
             let i = scene.figure_index.get();
             let i = match event.key().as_str() {
                 "n" => (i + 1) % FIGURES.len(),
@@ -266,11 +323,25 @@ fn app(name: &str) -> Result<(), JsValue> {
                 }
                 _ => return,
             };
-            scene.load_figure(i);
+            scene.open_figure(i);
         }) as Box<dyn FnMut(_)>);
-        editor.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
+        document.add_event_listener_with_callback("keydown", closure.as_ref().unchecked_ref())?;
         closure.forget();
     }
+
+    {
+        let scene = scene.clone();
+
+        let closure = Closure::wrap(Box::new(move |_event: web_sys::Event| {
+            scene.route();
+        }) as Box<dyn FnMut(_)>);
+        web_sys::window()
+            .unwrap()
+            .add_event_listener_with_callback("hashchange", closure.as_ref().unchecked_ref())?;
+        closure.forget();
+    }
+
+    scene.route();
 
     Ok(())
 }

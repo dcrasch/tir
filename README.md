@@ -64,6 +64,12 @@ screen-space grain. Press `r` in `tir-wgpu` or `c` in `tir-web` to cycle the
 colour assignment. The web version also has a **Colours** menu with the classic
 red/green/blue/black colours and a grayscale palette.
 
+`tir-web` opens on a gallery of all 35 symmetries, grouped into the tiled.art
+chart categories (`figure_categories()`), with a thumbnail of each tiling.
+Clicking a card starts the editor on that figure. The gallery and the editor
+are the `#/` and `#/edit/<id>` routes of the same page, so the browser back and
+forward buttons move between them.
+
 Every figure is checked by `tessellations/tests/test_grid.rs`, which verifies
 that the generated tiling covers a sampled area exactly once (no gaps or
 overlaps). Base polygons and edge pairings for the IH types follow

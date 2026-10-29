@@ -76,7 +76,8 @@ build-release:
 run:
     {{ nix }} cargo run --release
 
-# Save a screenshot of the desktop app: just screenshot out.png [figure 0-4] [demo-edit 0/1]
+# Save a screenshot of the desktop app: just screenshot out.png [figure 0-34] [demo-edit 0/1]
+# (set TIR_PICKER=1 in the environment to capture the "pick symmetry" window)
 screenshot out="screenshot.png" figure="0" demo="0":
     {{ nix }} cargo build --features screenshot
     env -u WAYLAND_DISPLAY TIR_SCREENSHOT="{{ out }}" TIR_FIGURE="{{ figure }}" \

@@ -1,7 +1,7 @@
 //! Domain types for tessellation figures.
 
 use eframe::egui::{Color32, Pos2, Vec2};
-use tessellations::tessellationfigure::TessellationFigure;
+use tessellations::tessellationfigure::{FIGURE_IDS, FIGURES, FigureInfo, TessellationFigure};
 use tessellations::tessellationline::Point;
 
 /// Color palette for rendering tessellations.
@@ -100,43 +100,48 @@ impl View {
     }
 }
 
-/// All base figures provided by the `tessellations` crate.
+/// One of the tessellation symmetries provided by the `tessellations` crate.
+///
+/// All 35 figures behave the same way, so this is a thin wrapper around a
+/// registry index rather than an enum with a variant per figure.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
-pub enum FigureKind {
-    Square,
-    Triangle,
-    Square90,
-    Diamond,
-    Hexagon,
-}
+pub struct FigureKind(usize);
 
 impl FigureKind {
-    pub const ALL: [Self; 5] = [
-        Self::Square,
-        Self::Triangle,
-        Self::Square90,
-        Self::Diamond,
-        Self::Hexagon,
-    ];
-
-    pub fn label(self) -> &'static str {
-        match self {
-            Self::Square => "Square",
-            Self::Triangle => "Triangle",
-            Self::Square90 => "Square 90°",
-            Self::Diamond => "Diamond",
-            Self::Hexagon => "Hexagon",
+    /// Every figure, in registry order ([`FIGURE_IDS`]).
+    pub const ALL: [Self; FIGURE_IDS.len()] = {
+        let mut all = [Self(0); FIGURE_IDS.len()];
+        let mut i = 0;
+        while i < FIGURE_IDS.len() {
+            all[i] = Self(i);
+            i += 1;
         }
+        all
+    };
+
+    /// Figure at `index`, wrapping around the registry.
+    pub fn from_index(index: usize) -> Self {
+        Self(index % FIGURE_IDS.len())
     }
 
+    /// Index of this figure in the registry.
+    pub fn index(self) -> usize {
+        self.0
+    }
+
+    /// Display metadata (shape, variant, Heesch type, IH number, group).
+    pub fn info(self) -> &'static FigureInfo {
+        &FIGURES[self.0]
+    }
+
+    /// Display name, e.g. `"Triangles, rotated"`.
+    pub fn label(self) -> String {
+        self.info().name()
+    }
+
+    /// Build a fresh, pristine figure.
     pub fn build(self) -> TessellationFigure {
-        match self {
-            Self::Square => TessellationFigure::square(),
-            Self::Triangle => TessellationFigure::triangle(),
-            Self::Square90 => TessellationFigure::square90(),
-            Self::Diamond => TessellationFigure::diamond(),
-            Self::Hexagon => TessellationFigure::hexagon(),
-        }
+        TessellationFigure::by_index(self.0)
     }
 }
 
