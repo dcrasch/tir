@@ -19,8 +19,8 @@ nix := if env("TIR_DEVSHELL", "") == "" { "nix develop --quiet -c" } else { "" }
 
 package := "com.example.tir_app"
 activity := package + "/android.app.NativeActivity"
-apk_debug := "target/debug/apk/tir_app.apk"
-apk_release := "target/release/apk/tir_app.apk"
+apk_debug := "../target/debug/apk/tir_app.apk"
+apk_release := "../target/release/apk/tir_app.apk"
 
 # Release signing. Defaults to the debug keystore (fine for sideloading);
 # override with your own for distribution:

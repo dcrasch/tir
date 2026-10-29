@@ -1,0 +1,21 @@
+# Tessellation web app: development server, production build and updates.
+#
+# Run `just` to list all recipes.
+
+set shell := ["bash", "-euo", "pipefail", "-c"]
+
+# List recipes
+default:
+    @just --list --unsorted
+
+# Run the Trunk development server and open it in the browser
+serve:
+    trunk serve --release --open
+
+# Alias for `serve`
+run: serve
+
+# Build the production site into ../docs (configured in Trunk.toml)
+dist:
+    trunk build --release
+    @echo "wrote ../docs"

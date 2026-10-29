@@ -76,6 +76,7 @@
             "armv7-linux-androideabi"
             "x86_64-linux-android"
             "i686-linux-android"
+            "wasm32-unknown-unknown"
           ];
         };
 
@@ -107,6 +108,7 @@
             androidSdk
             pkgs.cargo-apk
             pkgs.just
+            pkgs.trunk
             pkgs.jdk17
             pkgs.pkg-config
           ];
