@@ -66,9 +66,10 @@ red/green/blue/black colours and a grayscale palette.
 
 `tir-web` opens on a gallery of all 35 symmetries, grouped into the tiled.art
 chart categories (`figure_categories()`), with a thumbnail of each tiling.
-Clicking a card starts the editor on that figure. The gallery and the editor
-are the `#/` and `#/edit/<id>` routes of the same page, so the browser back and
-forward buttons move between them.
+Clicking a card starts the editor on that figure. The editor centres the
+editable tile in the drawing, so the tile you drag is always in the middle. The
+gallery and the editor are the `#/` and `#/edit/<id>` routes of the same page,
+so the browser back and forward buttons move between them.
 
 Every figure is checked by `tessellations/tests/test_grid.rs`, which verifies
 that the generated tiling covers a sampled area exactly once (no gaps or

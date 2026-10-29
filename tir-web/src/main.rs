@@ -15,9 +15,29 @@ use tessellations::tessellationfigure::{
 };
 use tessellations::tessellationline::{Point, PointIndexPath, Transform};
 
-/// Transform that maps tile coordinates into the 400x400 SVG viewBox.
-fn view_transform() -> Transform {
-    Transform::scale(100.0, 100.0).then_translate(euclid::vec2(100.0, 100.0))
+/// Side of the SVG viewBox, in user units.
+const VIEW_SIZE: f32 = 400.0;
+/// ViewBox units per figure unit.
+const VIEW_SCALE: f32 = 100.0;
+
+/// Transform that maps figure coordinates into the SVG viewBox, centred on the
+/// figure's bounding box so the editable tile sits in the middle of the drawing.
+fn view_transform(figure: &TessellationFigure) -> Transform {
+    let points = figure.points();
+    let (mut min, mut max) = (Point::new(0.0, 0.0), Point::new(0.0, 0.0));
+    if let Some(&first) = points.first() {
+        (min, max) = (first, first);
+        for p in &points {
+            min = min.min(*p);
+            max = max.max(*p);
+        }
+    }
+    let center = min.lerp(max, 0.5);
+    let half = VIEW_SIZE / 2.0;
+    Transform::scale(VIEW_SCALE, VIEW_SCALE).then_translate(euclid::vec2(
+        half - VIEW_SCALE * center.x,
+        half - VIEW_SCALE * center.y,
+    ))
 }
 
 /// Editor state shared by the event handlers.
@@ -32,6 +52,12 @@ struct Scene {
     palette_index: Cell<usize>,
     selected_point_index: Cell<Option<PointIndexPath>>,
     pressed: Cell<bool>,
+    /// Maps figure coordinates into the SVG viewBox, centred on the loaded
+    /// figure's bounding box. Frozen when the figure loads, so editing a tile
+    /// doesn't shift the view under the pointer.
+    view: Cell<Transform>,
+    /// Inverse of `view`, for turning mouse positions into figure coordinates.
+    view_inverse: Cell<Transform>,
 }
 
 impl Scene {
@@ -40,7 +66,7 @@ impl Scene {
     }
 
     fn draw(&self) {
-        let m = view_transform();
+        let m = self.view.get();
         let figure = self.figure.borrow();
         let svg_document = SVGBackend
             .compose_tiling_named(&figure, &m, self.palette(), "editor-figure")
@@ -52,9 +78,14 @@ impl Scene {
     fn load_figure(&self, index: usize) {
         let index = index % FIGURES.len();
         self.figure_index.set(index);
-        self.figure
-            .borrow_mut()
-            .load(TessellationFigure::by_index(index));
+        let figure = TessellationFigure::by_index(index);
+        // Centre the view on this figure and freeze it, so later edits to the
+        // tile don't move the view.
+        let m = view_transform(&figure);
+        self.view.set(m);
+        self.view_inverse
+            .set(m.inverse().expect("view transform is invertible"));
+        self.figure.borrow_mut().load(figure);
         if let Some(document) = web_sys::window().and_then(|w| w.document()) {
             document.set_title(&TessellationFigure::title(index));
         }
@@ -138,7 +169,6 @@ fn build_gallery(
     document: &web_sys::Document,
     gallery: &web_sys::HtmlElement,
 ) -> Result<(), JsValue> {
-    let m = view_transform();
     for (category, members) in figure_categories() {
         let section = document.create_element("section")?;
         section.set_class_name("category");
@@ -152,6 +182,7 @@ fn build_gallery(
         for index in members {
             let info = &FIGURES[index];
             let figure = TessellationFigure::by_index(index);
+            let m = view_transform(&figure);
             let id = format!("figure-{}", info.id);
             let Some(svg) = SVGBackend.compose_tiling_named(&figure, &m, &DEFAULT_PALETTE, &id)
             else {
@@ -219,13 +250,12 @@ fn app(name: &str) -> Result<(), JsValue> {
         palette_index: Cell::new(0),
         selected_point_index: Cell::new(None),
         pressed: Cell::new(false),
+        view: Cell::new(Transform::identity()),
+        view_inverse: Cell::new(Transform::identity()),
     });
 
     scene.set_palette(0);
     scene.load_figure(0);
-
-    let m1: Transform = view_transform();
-    let mi = m1.inverse().unwrap();
 
     {
         let target = scene.palette_select.clone();
@@ -244,8 +274,10 @@ fn app(name: &str) -> Result<(), JsValue> {
         let scene = scene.clone();
 
         let closure = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
-            let p =
-                mi.transform_point(Point::new(event.offset_x() as f32, event.offset_y() as f32));
+            let p = scene
+                .view_inverse
+                .get()
+                .transform_point(Point::new(event.offset_x() as f32, event.offset_y() as f32));
             let (selected, inserted) = {
                 let mut f = scene.figure.borrow_mut();
                 match f.hitpoints(p, 0.05) {
@@ -287,8 +319,10 @@ fn app(name: &str) -> Result<(), JsValue> {
                 return;
             }
 
-            let p =
-                mi.transform_point(Point::new(event.offset_x() as f32, event.offset_y() as f32));
+            let p = scene
+                .view_inverse
+                .get()
+                .transform_point(Point::new(event.offset_x() as f32, event.offset_y() as f32));
             scene.figure.borrow_mut().update(h, p);
             scene.draw();
         }) as Box<dyn FnMut(_)>);

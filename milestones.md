@@ -271,11 +271,18 @@ After this milestone all 35 symmetries are done.
       thumbnail of the tiling; clicking a card starts the editor on that
       figure. The gallery and editor are the `#/` and `#/edit/<id>` routes of
       the same page, so the browser back and forward buttons work.
+- [x] Centre the editable tile in `tir-web`: the editor and the gallery
+      thumbnails shift the view onto the figure's bounding box, so the tile you
+      drag sits in the middle of the drawing. The view is frozen when the figure
+      loads, so editing doesn't move it under the pointer.
 - [x] Tile picker in `tir-app`: the hamburger menu's figure list (Square,
       Triangle, Square 90°, Diamond, Hexagon) is replaced by a **Pick
       symmetry…** entry that opens a window with all 35 figures grouped by the
       tiled.art chart categories (`figure_categories()`), each shown as a
-      thumbnail. Thumbnails are triangulated once per palette and cached.
+      thumbnail. Thumbnails use the same fixed zoom as `tir-web` (a four-unit
+      window centred on the figure's bounding box) and outline the editable tile
+      the same way (a white halo under a dark line). They are triangulated once
+      per palette and cached.
 - [ ] Non-rigid types: allow moving base-polygon vertices (within the
       constraints of the type) instead of only edge points.
 - [x] Rebuild `docs/` (web demo) with all figures; the new bundle includes the
