@@ -1,9 +1,16 @@
 mod lyon_render;
+mod palette;
 mod skia_render;
 mod svg_render;
 pub use lyon_render::Builder;
 pub use lyon_render::LyonBackend;
 pub use lyon_render::OutputPrimitive;
+pub use palette::Palette;
+pub use palette::ALHAMBRA;
+pub use palette::CLASSIC;
+pub use palette::DEFAULT_PALETTE;
+pub use palette::GRAYSCALE;
+pub use palette::PALETTES;
 pub use skia_render::Backend;
 pub use skia_render::OutputImage;
 pub use skia_render::Render;

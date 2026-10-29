@@ -115,7 +115,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("  s/l: save/load figure.json");
     println!("  w: save out.svg");
 
-    let mut palette: Vec<Srgb<f32>> = alhambra_palette();
+    let mut palette: Vec<Srgb<f32>> = ALHAMBRA.srgb();
     let mut figure_index = 0usize;
     let mut f = TessellationFigure::by_index(figure_index);
 
@@ -849,26 +849,6 @@ fn update_inputs(
     true
 }
 
-/// Four ceramic colours sampled from the Alhambra "Brilliant" palette:
-/// Amalfi, Capri, Canary and Denim.
-///
-/// The order matters because `build_tiling` uses the first `figure.colors`
-/// entries: two-colour figures get rose and teal, three-colour figures add
-/// gold, and four-colour figures add the deep blue.
-const ALHAMBRA_PALETTE: [[u8; 3]; 4] = [
-    [0xc9, 0x6c, 0x9b], // Amalfi
-    [0x56, 0x87, 0x83], // Capri
-    [0xdb, 0xc2, 0x4b], // Canary
-    [0x1b, 0x1c, 0x47], // Denim
-];
-
-fn alhambra_palette() -> Vec<Srgb<f32>> {
-    ALHAMBRA_PALETTE
-        .iter()
-        .map(|&[r, g, b]| Srgb::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0))
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -884,19 +864,6 @@ mod tests {
                 primitives <= PRIM_BUFFER_LEN,
                 "{id} needs {primitives} primitives, buffer holds {PRIM_BUFFER_LEN}"
             );
-        }
-    }
-
-    #[test]
-    fn all_palette_colours_are_different() {
-        let palette = alhambra_palette();
-        assert_eq!(palette.len(), 4);
-        for i in 0..palette.len() {
-            for j in 0..i {
-                let a = (palette[i].red, palette[i].green, palette[i].blue);
-                let b = (palette[j].red, palette[j].green, palette[j].blue);
-                assert_ne!(a, b, "Alhambra palette colours {j} and {i} are identical");
-            }
         }
     }
 }
