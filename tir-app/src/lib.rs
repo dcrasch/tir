@@ -11,6 +11,7 @@
 mod app;
 mod figure;
 mod input;
+mod palette_picker;
 mod picker;
 mod render;
 mod ui;

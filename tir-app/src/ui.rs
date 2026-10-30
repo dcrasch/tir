@@ -3,7 +3,7 @@
 use eframe::egui;
 
 use crate::app::FontScale;
-use crate::figure::{FigureKind, Palette, Settings};
+use crate::figure::{FigureKind, Settings};
 
 /// Extra text size for the menu popup, on top of the system font scale.
 const MENU_TEXT_SCALE: f32 = 1.4;
@@ -13,6 +13,8 @@ const MENU_TEXT_SCALE: f32 = 1.4;
 pub enum MenuAction {
     /// Open the "pick symmetry" window.
     PickSymmetry,
+    /// Open the "palette" window.
+    PickPalette,
     /// Switch to the chosen figure (the picker's selection).
     SelectFigure(FigureKind),
     /// Discard edits and reload the current figure.
@@ -53,16 +55,9 @@ pub fn menu(
                 action = Some(MenuAction::PickSymmetry);
                 ui.close();
             }
-            ui.separator();
-            ui.label(egui::RichText::new("Palette").weak());
-            for p in Palette::ALL {
-                if ui
-                    .selectable_label(settings.palette == p, p.label())
-                    .clicked()
-                {
-                    settings.palette = p;
-                    ui.close();
-                }
+            if ui.button("Palette…").clicked() {
+                action = Some(MenuAction::PickPalette);
+                ui.close();
             }
             ui.separator();
             ui.checkbox(&mut settings.show_edges, "Show edges");

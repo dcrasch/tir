@@ -1,6 +1,7 @@
 //! Domain types for tessellation figures.
 
 use eframe::egui::{Color32, Pos2, Vec2};
+use tessellations::render::ALHAMBRA;
 use tessellations::tessellationfigure::{FIGURE_IDS, FIGURES, FigureInfo, TessellationFigure};
 use tessellations::tessellationline::Point;
 
@@ -9,15 +10,30 @@ use tessellations::tessellationline::Point;
 pub enum Palette {
     Original,
     Grayscale,
+    /// The crate's ceramic colours sampled from the Alhambra tiles.
+    Alhambra,
+    /// Escher's "Day and Night": night sky, daylight, black and white birds.
+    EscherDayAndNight,
+    /// Escher's "Sky and Water I": water, shallows, sand and foam.
+    EscherSkyAndWater,
 }
 
 impl Palette {
-    pub const ALL: [Self; 2] = [Self::Original, Self::Grayscale];
+    pub const ALL: [Self; 5] = [
+        Self::Original,
+        Self::Grayscale,
+        Self::Alhambra,
+        Self::EscherDayAndNight,
+        Self::EscherSkyAndWater,
+    ];
 
     pub fn label(self) -> &'static str {
         match self {
             Self::Original => "Original",
             Self::Grayscale => "Grayscale",
+            Self::Alhambra => "Alhambra",
+            Self::EscherDayAndNight => "Escher: Day and Night",
+            Self::EscherSkyAndWater => "Escher: Sky and Water",
         }
     }
 
@@ -36,8 +52,32 @@ impl Palette {
                 Color32::from_rgb(0xa0, 0xa0, 0xa0),
                 Color32::from_rgb(0xe0, 0xe0, 0xe0),
             ],
+            Self::Alhambra => crate_colors(&ALHAMBRA),
+            Self::EscherDayAndNight => [
+                Color32::from_rgb(0x1b, 0x2a, 0x41), // night sky
+                Color32::from_rgb(0x8f, 0xb8, 0xd4), // daylight
+                Color32::from_rgb(0x14, 0x14, 0x14), // black birds
+                Color32::from_rgb(0xf2, 0xe8, 0xcf), // white birds
+            ],
+            Self::EscherSkyAndWater => [
+                Color32::from_rgb(0x1d, 0x4e, 0x66), // deep water
+                Color32::from_rgb(0x5b, 0x9a, 0x9a), // shallows
+                Color32::from_rgb(0xc9, 0xa6, 0x6b), // sand
+                Color32::from_rgb(0xf4, 0xed, 0xd8), // foam
+            ],
         }
     }
+}
+
+/// Convert a palette from the `tessellations` crate to egui colours.
+fn crate_colors(palette: &tessellations::render::Palette) -> [Color32; 4] {
+    let c = palette.colors;
+    [
+        Color32::from_rgb(c[0][0], c[0][1], c[0][2]),
+        Color32::from_rgb(c[1][0], c[1][1], c[1][2]),
+        Color32::from_rgb(c[2][0], c[2][1], c[2][2]),
+        Color32::from_rgb(c[3][0], c[3][1], c[3][2]),
+    ]
 }
 
 /// User-adjustable view options (everything in the menu except the figure).
@@ -201,7 +241,18 @@ mod tests {
                 }
             }
         }
-        assert_ne!(Palette::Original.colors(), Palette::Grayscale.colors());
+        for (i, a) in Palette::ALL.iter().enumerate() {
+            for b in &Palette::ALL[..i] {
+                assert_ne!(a.colors(), b.colors(), "{a:?} and {b:?}");
+            }
+        }
+    }
+
+    #[test]
+    fn alhambra_uses_the_crate_colours() {
+        let crate_colors = crate_colors(&tessellations::render::ALHAMBRA);
+        assert_eq!(Palette::Alhambra.colors(), crate_colors);
+        assert_eq!(Palette::Alhambra.label(), "Alhambra");
     }
 
     #[test]

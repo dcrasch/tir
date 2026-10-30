@@ -91,6 +91,8 @@ pub struct TirApp {
     pub picker_open: bool,
     /// Cached picker contents; rebuilt when the palette changes.
     pub picker: Option<Picker>,
+    /// Whether the "palette" window is showing.
+    pub palette_picker_open: bool,
 }
 
 impl Default for TirApp {
@@ -108,6 +110,7 @@ impl Default for TirApp {
             font_scale: FontScale::Default,
             picker_open: false,
             picker: None,
+            palette_picker_open: false,
         };
         app.reset();
         app
@@ -137,6 +140,7 @@ impl TirApp {
             }
             MenuAction::Reset => self.reset(),
             MenuAction::PickSymmetry => self.open_picker(),
+            MenuAction::PickPalette => self.palette_picker_open = true,
         }
     }
 
@@ -169,6 +173,21 @@ impl TirApp {
         };
         if let Some(kind) = picker.show(ctx, &mut self.picker_open, self.kind, self.font_scale) {
             self.apply(MenuAction::SelectFigure(kind));
+        }
+    }
+
+    /// Draw the palette window and switch to the palette the user clicked.
+    fn show_palette_picker(&mut self, ctx: &egui::Context) {
+        if !self.palette_picker_open {
+            return;
+        }
+        if let Some(palette) = crate::palette_picker::show(
+            ctx,
+            &mut self.palette_picker_open,
+            self.settings.palette,
+            self.font_scale,
+        ) {
+            self.settings.palette = palette;
         }
     }
 
@@ -290,6 +309,7 @@ impl eframe::App for TirApp {
         );
 
         self.show_picker(ui.ctx());
+        self.show_palette_picker(ui.ctx());
 
         #[cfg(feature = "screenshot")]
         crate::utilities::screenshot::handle(ui.ctx());
@@ -537,6 +557,16 @@ mod tests {
     }
 
     #[test]
+    fn pick_palette_opens_without_changing_the_palette() {
+        let mut app = TirApp::default();
+        app.settings.palette = Palette::Grayscale;
+        app.apply(MenuAction::PickPalette);
+        assert!(app.palette_picker_open);
+        assert_eq!(app.settings.palette, Palette::Grayscale);
+        assert!(!app.picker_open);
+    }
+
+    #[test]
     fn font_scale_apply_scales_text() {
         let base = egui::Style::default();
         for (raw, f) in [(0.85, 0.85), (1.0, 1.0), (1.3, 1.3), (1.6, 1.6)] {
@@ -601,6 +631,35 @@ mod tests {
         let mut app = TirApp::default();
         app.apply(MenuAction::PickSymmetry);
         assert!(app.picker_open);
+        for size in [egui::vec2(900.0, 700.0), egui::vec2(360.0, 640.0)] {
+            for font_scale in [
+                FontScale::Small,
+                FontScale::Large,
+                FontScale::ExtraLarge(1.8),
+            ] {
+                app.font_scale = font_scale;
+                let input = || egui::RawInput {
+                    screen_rect: Some(egui::Rect::from_min_size(egui::Pos2::ZERO, size)),
+                    ..Default::default()
+                };
+                let mut out = ctx.run_ui(input(), |ui| {
+                    let mut frame = eframe::Frame::_new_kittest();
+                    app.ui(ui, &mut frame);
+                });
+                out.textures_delta.clear();
+            }
+        }
+    }
+
+    /// The palette window must draw without panicking at any font scale or
+    /// screen size (including a phone-sized one).
+    #[test]
+    fn palette_window_runs_headless() {
+        use eframe::App as _;
+        let ctx = egui::Context::default();
+        let mut app = TirApp::default();
+        app.apply(MenuAction::PickPalette);
+        assert!(app.palette_picker_open);
         for size in [egui::vec2(900.0, 700.0), egui::vec2(360.0, 640.0)] {
             for font_scale in [
                 FontScale::Small,

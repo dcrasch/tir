@@ -19,3 +19,7 @@ run: serve
 dist:
     trunk build --release
     @echo "wrote ../docs"
+
+# Update the workspace dependency lockfile
+update:
+    cargo update
